@@ -156,7 +156,7 @@ class ContourFinder:
   
   def crop(self, mode, crop_padding = 10, verbose = False):
     """
-    mode: MOBILE_SCREEN, TRAINING_ELEMENTS
+    mode: MOBILE, TRAINING
     min_contour_dimen: ignores anything below specified dimention when applying contours
     crop_padding: padding to apply when cropping contours
     crop: if true, it will crop contours
