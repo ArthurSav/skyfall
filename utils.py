@@ -1,6 +1,9 @@
 import os
 import cv2
+import numpy as np
 import matplotlib.pylab as plt
+from skimage.transform import rescale, resize, downscale_local_mean, pyramid_reduce
+
 
 MAIN_FOLDER = 'data'
 
@@ -53,6 +56,37 @@ def save_images(images, class_name, override_existing = False, verbose = False):
   if verbose:
     print("deleted: {}, added: {}, total: {} ({})".format(removed_num, added_num, current_images_num, dir_data_class))
 
+def convert_to_square(image, size):
+  """
+  Resizes an image while maintaing aspect ratio
+
+  image: image as numpy array
+  size: resize size for square
+  """
+  height, width = image.shape  
+  if(height > width):
+    differ = height
+  else:
+    differ = width
+  differ += 4
+
+  # square filler
+  background_filler = image[0][0]
+  mask = np.zeros((differ, differ), dtype = "uint8")
+  mask.fill(background_filler)
+
+  x_pos = int((differ - width) / 2)
+  y_pos = int((differ - height) / 2)
+
+  # center image inside the square
+  mask[y_pos: y_pos + height, x_pos: x_pos + width] = image[0: height, 0: width]
+
+  # downscale if needed
+  if differ / size > 1:
+    mask = pyramid_reduce(mask, differ / size)
+  mask = cv2.resize(mask, (size, size), interpolation = cv2.INTER_AREA)
+
+  return mask
 
 def show_images(images, label = None, labels = None, size = 10):
   plt.figure(figsize=(size, size))
