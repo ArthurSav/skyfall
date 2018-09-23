@@ -107,6 +107,9 @@ class Loader:
       number_of_classes = len(names)
       y_train = keras.utils.to_categorical(y_train, number_of_classes)
       y_test = keras.utils.to_categorical(y_test, number_of_classes)
+ 
+    print("Exporting size: {}x{}".format(size, size))
+    print("x_train: {}, x_test: {}".format(len(x_train), len(x_test))) 
     
     return names, (x_train, y_train), (x_test, y_test)  
  
