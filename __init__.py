@@ -6,10 +6,7 @@ __author__ = 'Arthur Saveliev'
 
 __all__ = ['utils', 'Loader', 'ContourFinder', 'CropType']
 
-from skyfall import data_loading
-from skyfall import contours
 from skyfall import utils
 
-from data_loading import Loader
-from contours import ContourFinder
-from contours import CropType
+from skyfall.data_loading import *
+from skyfall.contours import *
