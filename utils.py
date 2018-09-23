@@ -56,37 +56,47 @@ def save_images(images, class_name, override_existing = False, verbose = False):
   if verbose:
     print("deleted: {}, added: {}, total: {} ({})".format(removed_num, added_num, current_images_num, dir_data_class))
 
-def convert_to_square(image, size):
+def convert_to_square(image, size, retain_aspect_ratio = False):
   """
   Resizes an image while maintaing aspect ratio
 
   image: image as numpy array
   size: resize size for square
+  retain_aspect_ratio: if true, it will try to resize the image while maintaining it's aspect ratio.
+
+  Note: retain_aspect_ratio is not playing well with image normalization and seems to alter the original image quite a bit
   """
-  height, width = image.shape  
-  if(height > width):
-    differ = height
+
+  mask = None
+
+  if retain_aspect_ratio:
+
+    height, width = image.shape
+    if(height > width):
+      differ = height
+    else:
+      differ = width
+    differ += 4
+
+    # square filler
+    background_filler = image[0][0]
+    mask = np.zeros((differ, differ), dtype = "uint8")
+    mask.fill(background_filler)
+
+    x_pos = int((differ - width) / 2)
+    y_pos = int((differ - height) / 2)
+
+    # center image inside the square
+    mask[y_pos: y_pos + height, x_pos: x_pos + width] = image[0: height, 0: width]
+
+    # downscale if needed
+    if differ / size > 1:
+      mask = pyramid_reduce(mask, differ / size)
+
   else:
-    differ = width
-  differ += 4
+    mask = image
 
-  # square filler
-  background_filler = image[0][0]
-  mask = np.zeros((differ, differ), dtype = "uint8")
-  mask.fill(background_filler)
-
-  x_pos = int((differ - width) / 2)
-  y_pos = int((differ - height) / 2)
-
-  # center image inside the square
-  mask[y_pos: y_pos + height, x_pos: x_pos + width] = image[0: height, 0: width]
-
-  # downscale if needed
-  if differ / size > 1:
-    mask = pyramid_reduce(mask, differ / size)
-  mask = cv2.resize(mask, (size, size), interpolation = cv2.INTER_AREA)
-
-  return mask
+  return cv2.resize(mask, (size, size), interpolation = cv2.INTER_AREA)
 
 def show_images(images, label = None, labels = None, size = 10):
   plt.figure(figsize=(size, size))
