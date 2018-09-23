@@ -69,11 +69,13 @@ class Loader:
     # get real train images
     for path in train_paths:
       image = self.__load_square_image(path, size)
+      image = np.invert(image) # white background, black content
       x_train = np.concatenate((x_train, image.reshape(1, size, size)))
       
     # get real test images  
     for path in test_paths:
       image = self.__load_square_image(path, size)
+      image = np.invert(image) # white background, black content
       x_test = np.concatenate((x_test, image.reshape(1, size, size)))
     
     # shuffle images to even out distribution during training
