@@ -113,5 +113,5 @@ def show_images(images, label = None, labels = None, size = 10):
     elif labels is not None:
       l = labels[i]
       
-    plt.imshow(images[i], cmap='gray')
+    plt.imshow(images[i])
     plt.xlabel(l)
