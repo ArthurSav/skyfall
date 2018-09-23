@@ -16,7 +16,7 @@ class Loader:
   def __init__(self, path):
     self.path = path
   
-  def load_data(self, split_ratio = 0.2, size = 64, normalize = True, verbose = True):
+  def load_data(self, split_ratio = 0.2, size = 64, normalize = True, verbose = True, max_images_per_class = None):
     """
     Loads folders from a source directory.
     Folder names become 'class' names.
@@ -39,10 +39,16 @@ class Loader:
     if verbose:
       print("Loading path data...")
       print("Found {} classes".format(len(classes)))
+      if max_images_per_class:
+        print("Limits to {} images per class".format(max_images_per_class))
     
     for idx, class_data in enumerate(classes):
       class_name = class_data[0]
       class_images = class_data[1]
+      
+      if max_images_per_class:
+        class_images = class_images[:min(max_images_per_class, len(class_images))]
+
       print("name: {}, images: {}".format(class_name, len(class_images)))
       
       # split into train, test
