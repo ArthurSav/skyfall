@@ -1,4 +1,3 @@
-from skyfall import utils
 import cv2
 from glob import glob
 import pandas as pd
@@ -6,6 +5,8 @@ import numpy as np
 import os
 from skimage.transform import rescale, resize, downscale_local_mean, pyramid_reduce
 from tensorflow import keras
+
+from skyfall import utils
 
 import matplotlib.pyplot as plt
 
@@ -23,13 +24,16 @@ class Loader:
     
     split_ratio: Accepts 0-1 values. Splits training and testing data
     size: Resizes the image in width=size and height=size (square) while maintaining aspect ratio
+
     return class names, training data with labels, testing data with labels
-    
     """
     
     classes = self.__load_from_root(self.path)
     
+    # class names (should be unique)
     names = []
+
+    # train/test image paths
     train_paths = []
     test_paths = []
     
@@ -66,52 +70,78 @@ class Loader:
       train_paths = np.concatenate((train_paths, train))
       test_paths = np.concatenate((test_paths, test))
       y_train = np.concatenate((y_train, train_labels))
-      y_test = np.concatenate((y_test, test_labels))   
-      
-    # todo - make sure provided size in no bigger than image size  
-    x_train = np.empty([0, size, size])
-    x_test = np.empty([0, size, size])
-      
-    # get real train images
-    for path in train_paths:
-      image = self.__load_square_image(path, size)
-      image = np.invert(image) # white background, black content
-      x_train = np.concatenate((x_train, image.reshape(1, size, size)))
-      
-    # get real test images  
-    for path in test_paths:
-      image = self.__load_square_image(path, size)
-      image = np.invert(image) # white background, black content
-      x_test = np.concatenate((x_test, image.reshape(1, size, size)))
-    
-    # shuffle images to even out distribution during training
-    permutation_train = np.random.permutation(len(train_paths))
-    permutation_test = np.random.permutation(len(test_paths))
+      y_test = np.concatenate((y_test, test_labels))
 
-    x_train = x_train[permutation_train, :, :]
-    y_train = y_train[permutation_train]
-    x_test = x_test[permutation_test, :, :]
-    y_test = y_test[permutation_test]
+    number_of_classes = len(names)
+      
+    # load images into numpy array
+    x_train = self.__load_paths_as_array(train_paths, size)
+    x_test = self.__load_paths_as_array(test_paths, size)
+
+    # shuffle images to even out distribution during training
+    x_train, y_train = self.__shuffle(x_train, y_train)
+    x_test, y_test = self.__shuffle(x_test, y_test)
     
     # reahape into [num_of_images, width, height, num_of_color_channels]
     x_train = x_train.reshape(x_train.shape[0], size, size, 1).astype('float32')
     x_test = x_test.reshape(x_test.shape[0], size, size, 1).astype('float32')
     
     if normalize:
-      
-      # normalize images
-      x_train /= 255.0
-      x_test /= 255.0
-
-      # normalize labels
-      number_of_classes = len(names)
-      y_train = keras.utils.to_categorical(y_train, number_of_classes)
-      y_test = keras.utils.to_categorical(y_test, number_of_classes)
+      x_train, y_train, x_test, y_test = self.__normalize(x_train, y_train, x_test, y_test, number_of_classes)
  
     print("Exporting size: {}x{}".format(size, size))
     print("x_train: {}, x_test: {}".format(len(x_train), len(x_test))) 
     
-    return names, (x_train, y_train), (x_test, y_test)  
+    return names, (x_train, y_train), (x_test, y_test)
+  
+  def __load_paths_as_array(self, paths, size):
+    """
+    paths: a list of image paths i.e /train/images/hello.jpg ...
+    size: image size
+
+    return a numpy array of loaded square images of shape i.e (num, size, size, 1)
+    """
+
+    x = np.empty([0, size, size])
+
+    for path in paths:
+      image = self.__load_square_image(path, size)
+      image = np.invert(image) # white background, black content
+      x = np.concatenate((x, image.reshape(1, size, size)))
+
+    return x
+
+  def __shuffle(self, x, y):
+    """
+    Random shuffle images and their labels
+    """
+
+    size = x.shape[0]
+    permutation = np.random.permutation(size)
+
+    x = x[permutation, :, :]
+    y = y[permutation]
+
+    return x, y
+  
+
+  def __normalize(self, x_train, y_train, x_test, y_test, number_of_classes):
+
+    if x_train.dtype != 'float32':
+      x_train = x_train..astype('float32')
+
+    if x_test.dtype != 'float32':
+      x_test = x_test.astype('float32')
+
+    # normalize images [0, 1]
+    x_train = (x_train - np.min(x_train)) / np.ptp(x_train)
+    x_test = (x_test - np.min(x_test)) / np.ptp(x_test)
+
+    # normalize labels to binary class matrix
+    y_train = keras.utils.to_categorical(y_train, number_of_classes)
+    y_test = keras.utils.to_categorical(y_test, number_of_classes)
+
+    return x_train, y_train, x_test, y_test
  
   def __load_square_image(self, path, size):
     """
