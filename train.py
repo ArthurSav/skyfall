@@ -5,9 +5,8 @@ import matplotlib.pylab as plt
 
 from enum import Enum
 
-from skyfall import utils
-from utils import TrainUtils as util_train
-from utils import ImageUtils as util_image
+from skyfall import utils_image
+from skyfall import utils_train
 
 class Train:
 
@@ -77,7 +76,7 @@ class Train:
             return
 
         predictions = model.predict(x_test)
-        util_train.calculate_accuracy(predictions, y_test)
+        utils_train.calculate_accuracy(predictions, y_test)
 
     def save(self, model = __MODEL, name = __MODEL_SAVE_NAME):
         """
@@ -89,4 +88,5 @@ class Train:
             print("Nothing to save")
             return
 
+        print("Saving model: {}".format(name))
         model.save_weights(name)

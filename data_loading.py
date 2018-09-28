@@ -6,7 +6,7 @@ import os
 from skimage.transform import rescale, resize, downscale_local_mean, pyramid_reduce
 from tensorflow import keras
 
-from skyfall import utils
+from skyfall import utils_image
 
 import matplotlib.pyplot as plt
 
@@ -127,8 +127,12 @@ class Loader:
 
   def __normalize(self, x_train, y_train, x_test, y_test, number_of_classes):
 
+    """
+    Normalize images to a range of [0, 1] and image labels binary matrixes
+    """
+
     if x_train.dtype != 'float32':
-      x_train = x_train..astype('float32')
+      x_train = x_train.astype('float32')
 
     if x_test.dtype != 'float32':
       x_test = x_test.astype('float32')
@@ -148,7 +152,7 @@ class Loader:
     Load image from path, resize to square (maintains aspect ratio)
     """
     image = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    image = utils.convert_to_square(image, size) 
+    image = utils_image.convert_to_square(image, size) 
     return image
   
   def __load_from_root(self, path):
@@ -169,7 +173,7 @@ class Loader:
 
     # load images    
     for folder in folders:
-      name, files = self.__load_from_folder(folder, file_type = self.IMAGE_TYPE)
+      name, files = self.__load_from_folder(folder, file_type = IMAGE_TYPE)
       if len(files) > 0:
         classes.append([name, files])
 
