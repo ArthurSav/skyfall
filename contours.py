@@ -67,7 +67,7 @@ class ContourFinder:
           continue
         
         # skip contours that are too big (usually it's the screen itself)
-        if self.calculate_percentage_area(w_parent, h_parent, w, h) > max_contour_percentage:
+        if self.__calculate_percentage_area(w_parent, h_parent, w, h) > max_contour_percentage:
           continue
         
         filtered_xy.append([x, y])
@@ -243,7 +243,7 @@ class ContourFinder:
     
     # save
     for idx,image in enumerate(images):
-      dir_filename = "{}/{}_{}.{}".format(path, class_name, idx + current_images_num, extension) # data/toolbar/toolbar_01.png
+      dir_filename = "{}/{}_{}{}".format(path, class_name, idx + current_images_num, extension) # data/toolbar/toolbar_01.png
       cv2.imwrite(dir_filename, image)
       added_num += 1
       

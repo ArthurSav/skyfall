@@ -77,7 +77,8 @@ def show_image_list(images = None, columns = 10, size = None, display = DisplayS
       size = img_size
       
     if columns > size:
-      print("Image set should have at least {} images".format(columns))
+      columns = size
+      print("Setting column size to {}".format(columns))
       return
       
     # calculate how many rows we need  
