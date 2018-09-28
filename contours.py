@@ -14,30 +14,11 @@ class ContourFinder:
   
   def __init__(self, image_path):
     self.image = cv2.imread(image_path)
+
+    if self.image is None:
+      print("No image found")
     
-  def calculate_percentage_area(self,w1, h1, w2, h2):
-    """
-    Compares 2 surface areas
-    return the percentage of area2 compared to area1 (i.e area 2 is 80% of area 1)
-    """
-    
-    if w1 != 0 and h1 != 0 and w2 != 0 and h2 != 0:
-      a1 = 2 * (w1 + h1)
-      a2 = 2 * (w2 + h2)
-      return a2 * 100 / a1
-      
-    return 0
-  
-  def test(self):
-    contours, hierarchy = self.find(cv2.RETR_TREE)
-    filtered = []
-    for c in contours:
-      x, y, w, h = cv2.boundingRect(c)
-      if w > 50 and h > 50:
-        filtered.append(c)
-    return filtered
-    
-  def find_mobile_screen_contours(self, min_contour_dimen = 50, max_contour_percentage = 75, min_layer =1, max_layer = 3, verbose = False):
+  def __find_mobile_screen_contours(self, min_contour_dimen = 50, max_contour_percentage = 75, min_layer =1, max_layer = 3, verbose = False):
     """
     contours: cv2 contours of an image
     hierarchy: contour hierarchy [Next, Previous, First_Child, Parent]
@@ -51,7 +32,7 @@ class ContourFinder:
     for contours and hierarchy see here: https://docs.opencv.org/3.4.0/d9/d8b/tutorial_py_contours_hierarchy.html
     """
     
-    contours, hierarchy = self.find(cv2.RETR_TREE)
+    contours, hierarchy = self.__find(cv2.RETR_TREE)
     hierarchy = hierarchy[0]
     
     # sort contours & hierarchy based on layer and element hierarchy
@@ -104,14 +85,27 @@ class ContourFinder:
           print("x: {}, y: {}".format(item[0], item[1]))
         
     return filtered_contours, filtered_hierarchy
+
+  def __calculate_percentage_area(self,w1, h1, w2, h2):
+    """
+    Compares 2 surface areas
+    return the percentage of area2 compared to area1 (i.e area 2 is 80% of area 1)
+    """
+    
+    if w1 != 0 and h1 != 0 and w2 != 0 and h2 != 0:
+      a1 = 2 * (w1 + h1)
+      a2 = 2 * (w2 + h2)
+      return a2 * 100 / a1
+      
+    return 0
   
-  def find_training_elements_contours(self, min_contour_dimen = 50):
+  def __find_training_elements_contours(self, min_contour_dimen = 50):
     """
     Element separation happens at a parent level only
     
     min_contour_dimen: contours that do not meet the minumum set dimen will be skipped
     """
-    contours, hierarchy = self.find(cv2.RETR_EXTERNAL)
+    contours, hierarchy = self.__find(cv2.RETR_EXTERNAL)
     
     filtered_contours = []
     filtered_hierarchy = []
@@ -131,7 +125,7 @@ class ContourFinder:
     return filtered_contours, filtered_hierarchy
     
   
-  def find(self, hierarchy_type = cv2.RETR_TREE):
+  def __find(self, hierarchy_type = cv2.RETR_TREE):
     """
     hierarchy_type: RETR_LIST, RETR_EXTERNAL, RETR_CCOMP, RETR_TREE
     
@@ -153,6 +147,16 @@ class ContourFinder:
     img_contour, contours, hierarchy = cv2.findContours(closed.copy(), hierarchy_type, cv2.CHAIN_APPROX_SIMPLE)
     
     return contours, hierarchy
+
+  # todo - rename me
+  def __test(self):
+    contours, hierarchy = self.__find(cv2.RETR_TREE)
+    filtered = []
+    for c in contours:
+      x, y, w, h = cv2.boundingRect(c)
+      if w > 50 and h > 50:
+        filtered.append(c)
+    return filtered
   
   def crop(self, mode, crop_padding = 10, verbose = False):
     """
@@ -170,11 +174,11 @@ class ContourFinder:
     contours, hierarchy = [], []
     
     if mode == CropType.MOBILE:
-      contours, hierarchy = self.find_mobile_screen_contours(verbose = True, min_layer = -1, max_layer = 3, max_contour_percentage = 60)
+      contours, hierarchy = self.__find_mobile_screen_contours(verbose = True, min_layer = -1, max_layer = 3, max_contour_percentage = 60)
     elif mode == CropType.TRAINING:
-      contours, hierarchy = self.find_training_elements_contours()
+      contours, hierarchy = self.__find_training_elements_contours()
     else:
-      contours = self.test()
+      contours = self.__test()
       
     if verbose:
         print("Cropping... mode: {} contours found: {}".format(mode.name, len(contours)))  
@@ -197,3 +201,55 @@ class ContourFinder:
       cv2.drawContours(image_with_contours, [approx], -1, (0, 255, 0), 2)
     
     return image_with_contours, cropped
+
+  def save_images(self, images, class_name, override_existing = False, verbose = False, destination = 'data'):
+
+    """
+    Saves a list of images that belong to a class into the specified directory
+
+    images: numpy array with images to save
+    class_name: class name for images
+    override_existing: if true, it will delete any previous images that belong to the specidied class
+    destination: parent dir for class images
+    """
+  
+    path = "{}/{}".format(destination, class_name) # data/toolbar/
+    extension = '.png'
+    
+    removed_num = 0
+    added_num = 0
+      
+    # create dirs, if needed
+    if not os.path.exists(destination):
+      os.makedirs(destination)
+    if not os.path.exists(path):
+      os.makedirs(path)
+      if verbose:
+        print("Created {}".format(path))
+      
+    # get existing images in class folder, if any
+    current_images = [file for file in os.listdir(path) if file.endswith(extension)]
+    current_images_num = len(current_images)
+    
+    # removes previous images
+    if override_existing and current_images_num > 0:
+      for img in current_images:
+        os.remove(path + "/" + img)
+        removed_num += 1
+        
+    # get existing images in class folder, if any
+    current_images = [file for file in os.listdir(path) if file.endswith(extension)]
+    current_images_num = len(current_images)
+    
+    # save
+    for idx,image in enumerate(images):
+      dir_filename = "{}/{}_{}.{}".format(path, class_name, idx + current_images_num, extension) # data/toolbar/toolbar_01.png
+      cv2.imwrite(dir_filename, image)
+      added_num += 1
+      
+    # get existing images in class folder, if any
+    current_images = [file for file in os.listdir(path) if file.endswith(extension)]
+    current_images_num = len(current_images)
+      
+    if verbose:
+      print("deleted: {}, added: {}, total: {} ({})".format(removed_num, added_num, current_images_num, path))
