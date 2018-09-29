@@ -11,10 +11,26 @@ class CropType(Enum):
   TRAINING = 2 # Assumes we're dealing with training images
 
 class ContourFinder:
-  
-  def __init__(self, image_path):
-    self.image = cv2.imread(image_path)
 
+  EXTENSION = '.png'
+  
+  def __init__(self, image_path, class_name = None):
+    """
+    image_path: i.e hello/image.png
+    class_name: i.e hello (used to name the parent folder when saving images)
+    """
+
+    if image_path is None:
+      print("Please provide a valid image path")
+      return
+
+    if class_name is not None:
+      self.class_name = class_name
+    else:
+      # image name becomes class name
+      class_name = image_path.replace(self.EXTENSION, '')
+
+    self.image = cv2.imread(image_path)
     if self.image is None:
       print("No image found")
     
@@ -36,8 +52,8 @@ class ContourFinder:
     hierarchy = hierarchy[0]
     
     # sort contours & hierarchy based on layer and element hierarchy
-#     contours = [x for _,x in sorted(zip(hierarchy, contours), key=lambda x: (x[0][3], x[0][1]))]
-#     hierarchy = sorted(hierarchy, key=lambda x: (x[3], x[1]))
+    # contours = [x for _,x in sorted(zip(hierarchy, contours), key=lambda x: (x[0][3], x[0][1]))]
+    # hierarchy = sorted(hierarchy, key=lambda x: (x[3], x[1]))
         
     filtered_contours = []
     filtered_hierarchy = []
@@ -199,10 +215,13 @@ class ContourFinder:
       peri = cv2.arcLength(c, True)
       approx = cv2.approxPolyDP(c, 0.02 * peri, True)
       cv2.drawContours(image_with_contours, [approx], -1, (0, 255, 0), 2)
+
+    self.image_with_contours = image_with_contours
+    self.cropped = cropped
     
     return image_with_contours, cropped
 
-  def save_images(self, images, class_name, override_existing = False, verbose = False, destination = 'data'):
+  def save_images(self, images = None, class_name = None, override_existing = False, verbose = False, destination = 'data'):
 
     """
     Saves a list of images that belong to a class into the specified directory
@@ -212,10 +231,23 @@ class ContourFinder:
     override_existing: if true, it will delete any previous images that belong to the specidied class
     destination: parent dir for class images
     """
+
+    # use cropped
+    if images is None and self.cropped is not None:
+      images = self.cropped  
+    elif images is None:
+      print("Nothing to save")
+      return
+
+    if class_name is None and self.class_name is not None:
+      class_name = self.class_name
+    elif class_name is None:
+      print("Class name is missing, cannot save")
+      return
   
     path = "{}/{}".format(destination, class_name) # data/toolbar/
-    extension = '.png'
     
+    extension = self.EXTENSION
     removed_num = 0
     added_num = 0
       
