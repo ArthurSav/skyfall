@@ -13,6 +13,10 @@ class CropType(Enum):
 class ContourFinder:
 
   EXTENSION = '.png'
+  class_name = None
+  image = None
+  cropped = None
+  image_with_contours = None
   
   def __init__(self, image_path, class_name = None):
     """
@@ -164,16 +168,7 @@ class ContourFinder:
     
     return contours, hierarchy
 
-  # todo - rename me
-  def __test(self):
-    contours, hierarchy = self.__find(cv2.RETR_TREE)
-    filtered = []
-    for c in contours:
-      x, y, w, h = cv2.boundingRect(c)
-      if w > 50 and h > 50:
-        filtered.append(c)
-    return filtered
-  
+
   def crop(self, mode, crop_padding = 10, verbose = False):
     """
     mode: MOBILE, TRAINING
@@ -194,7 +189,8 @@ class ContourFinder:
     elif mode == CropType.TRAINING:
       contours, hierarchy = self.__find_training_elements_contours()
     else:
-      contours = self.__test()
+      print("Please provide croping type: {}, {}".format(CropType.MOBILE.name, CropType.TRAINING.name))
+      return
       
     if verbose:
         print("Cropping... mode: {} contours found: {}".format(mode.name, len(contours)))  
@@ -216,11 +212,11 @@ class ContourFinder:
       approx = cv2.approxPolyDP(c, 0.02 * peri, True)
       cv2.drawContours(image_with_contours, [approx], -1, (0, 255, 0), 2)
 
+    print("Cropped images: {}".format(len(cropped)))
+
     self.image_with_contours = image_with_contours
     self.cropped = cropped
     
-    return image_with_contours, cropped
-
   def save_images(self, images = None, class_name = None, override_existing = False, verbose = False, destination = 'data'):
 
     """
