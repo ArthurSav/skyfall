@@ -79,7 +79,6 @@ def show_image_list(images = None, columns = 10, size = None, display = DisplayS
     if columns > size:
       columns = size
       print("Setting column size to {}".format(columns))
-      return
       
     # calculate how many rows we need  
     rows = round((size/ (columns * 1.0)) + 0.5)
@@ -106,3 +105,67 @@ def show_image_list(images = None, columns = 10, size = None, display = DisplayS
       plt.imshow(image)
     fig.tight_layout()
     plt.show()
+
+def show_prediction_list(images, class_names, predictions, size = None, labels = None, columns = 10, display = DisplaySize.SMALL):
+  """
+  Show eval predictions alongside images
+
+  images: numpy array of images
+  class_names: names corresponding to predictions ['toolbar', 'button' etc..]
+  predictions: predictions for provided images
+  labels: used when image predictions are known
+  """
+ 
+  img_size = images.shape[0]
+  
+  if size == None or size > img_size:
+    size = img_size
+    
+  if columns > size:
+    print("Image set should have at least {} images".format(columns))
+    size = columns
+    
+  # calculate how many rows we need  
+  rows = round((size/ (columns * 1.0)) + 0.5)
+  
+  x_ratio = size / rows
+  y_ratio = size / columns
+  
+  # controllable ratio by user
+  if display == DisplaySize.BIG:
+    ratio = 12
+  elif display == DisplaySize.MEDIUM:
+    ratio = 8
+  else:
+    ratio = 4
+      
+  fig = plt.figure(figsize=(x_ratio + ratio, y_ratio + ratio))
+  
+  for i in range(0, size):
+    image = images[i]
+    plt.subplot(rows, columns, i + 1)
+    plt.grid('off')
+    plt.xticks([])
+    plt.yticks([])
+    plt.imshow(image.squeeze())
+    
+    predicted_label = np.argmax(predictions[i])
+    score = predictions[i][predicted_label]
+    
+    color = 'blue'
+    if labels is not None:
+      true_label = np.argmax(labels[i])
+      if predicted_label == true_label:
+        color = 'green'
+      else:
+        color = 'red'
+      
+    label_name = class_names[predicted_label]
+    if labels is not None:
+      title = "{} {:0.2f} ({})".format(label_name, score, class_names[true_label])
+    else:
+      title = "{} {:0.2f}".format(label_name, score)
+    plt.xlabel(title, color=color)
+    
+  fig.tight_layout()
+  plt.show()
