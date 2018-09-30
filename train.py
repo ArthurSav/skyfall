@@ -10,9 +10,8 @@ from skyfall import utils_train
 
 class Train:
 
-    __MODEL = None
-
-    __MODEL_SAVE_NAME = 'weights.h5'
+    model = None
+    model_save_name = 'weights.h5'
 
     def __init__(self):
         pass
@@ -61,33 +60,41 @@ class Train:
         model = self.__build_model(shape = shape, outcomes = outcomes)
         model.fit(x = x_train, y = y_train, validation_split=0.1, batch_size=256, verbose=2, epochs=5)
         
-        self.__MODEL = model
+        self.model = model
 
         return model
 
     def evaluate(self, x_test, y_test, model = None):
-
         """
         Evaluates model accuracy
         """
 
-        if model is None and self.__MODEL is not None:
-            model = self.__MODEL
+        if model is None and self.model is not None:
+            model = self.model
         elif model is None:
-            print("Nothing to evaluate")
+            print("Model not found")
             return
 
         predictions = model.predict(x_test)
         utils_train.calculate_accuracy(predictions, y_test)
 
-    def save(self, model = __MODEL, name = __MODEL_SAVE_NAME):
+    def save(self, model = None, name = None):
         """
         model: trained keras model
         name: save name
         """
 
-        if model is None:
+        if model is None and self.model is not None:
+            model = self.model
+        elif model is None:
+            model = self.model
             print("Nothing to save")
+            return
+
+        if name is None and self.model_save_name is not None:
+            name = self.model_save_name
+        elif self.model_save_name is None:
+            print("Missing model save name")
             return
 
         print("Saving model: {}".format(name))
