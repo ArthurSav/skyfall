@@ -102,4 +102,4 @@ class Train:
             name = path + name
 
         print("Saving model: {}".format(name))
-        model.save_weights(name)
+        model.save(name)
