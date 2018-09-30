@@ -78,10 +78,11 @@ class Train:
         predictions = model.predict(x_test)
         utils_train.calculate_accuracy(predictions, y_test)
 
-    def save(self, model = None, name = None):
+    def save(self, model = None, name = None, path = None):
         """
         model: trained keras model
         name: save name
+        path: i.e folder/folder01/ Leave blank to save in current dir
         """
 
         if model is None and self.model is not None:
@@ -96,6 +97,9 @@ class Train:
         elif self.model_save_name is None:
             print("Missing model save name")
             return
+
+        if path:
+            name = path + name
 
         print("Saving model: {}".format(name))
         model.save_weights(name)
