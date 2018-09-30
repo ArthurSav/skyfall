@@ -106,7 +106,7 @@ def show_image_list(images = None, columns = 10, size = None, display = DisplayS
     fig.tight_layout()
     plt.show()
 
-def show_prediction_list(images, class_names, predictions, size = None, labels = None, columns = 10, display = DisplaySize.SMALL):
+def show_prediction_list(images, class_names, predictions, size = None, labels = None, columns = None, display = DisplaySize.SMALL):
   """
   Show eval predictions alongside images
 
@@ -114,6 +114,7 @@ def show_prediction_list(images, class_names, predictions, size = None, labels =
   class_names: names corresponding to predictions ['toolbar', 'button' etc..]
   predictions: predictions for provided images
   labels: used when image predictions are known
+  size: limit the number of shown images
   """
  
   img_size = images.shape[0]
@@ -121,9 +122,14 @@ def show_prediction_list(images, class_names, predictions, size = None, labels =
   if size == None or size > img_size:
     size = img_size
     
+  if columns is None and size <= 10:
+    columns = 2
+  elif column is None:
+    columns = 10
+
   if columns > size:
-    print("Image set should have at least {} images".format(columns))
     size = columns
+  
     
   # calculate how many rows we need  
   rows = round((size/ (columns * 1.0)) + 0.5)
