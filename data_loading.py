@@ -100,7 +100,7 @@ class Loader:
     
     return names, (x_train, y_train), (x_test, y_test)
   
-  def load_eval_data(self, size = 64, normalize = True, verbose = True, max_images = None):
+  def load_predict_data(self, size = 64, normalize = True, verbose = True, max_images = None):
 
     name, files = self.__load_from_folder(self.path, self.IMAGE_TYPE, True)
 
