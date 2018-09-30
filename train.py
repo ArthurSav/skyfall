@@ -65,13 +65,15 @@ class Train:
 
         return model
 
-    def evaluate(self, x_test, y_test, model = __MODEL):
+    def evaluate(self, x_test, y_test, model = None):
 
         """
         Evaluates model accuracy
         """
 
-        if model is None:
+        if model is None and self.__MODEL is not None:
+            model = self.__MODEL
+        elif model is None:
             print("Nothing to evaluate")
             return
 
