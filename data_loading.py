@@ -18,6 +18,7 @@ class Loader:
   """
   
   IMAGE_TYPE = 'png'
+  path = None
   
   def __init__(self, path):
     self.path = path
