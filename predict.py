@@ -6,16 +6,23 @@ class Predict:
     model = None
     class_names = None
 
-    def __init__(self, model_path, class_names):
+    def __init__(self, model_path = None, model = None, class_names):
         """
         model_path: path to pre-trained model
         class_names: class names corresponding to predictions
         """
-        self.model = load_model(model_path)
+
         self.class_name = class_names
+
+        if model is not None:
+            self.model = model
+        elif model_path is not None:
+            self.model = load_model(model_path)
+
         if self.model is None:
             print("Nothing to load")
             return
+            
         if self.class_names is None:
             print("No class names provided")
             return
