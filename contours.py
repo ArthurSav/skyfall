@@ -32,7 +32,7 @@ class ContourFinder:
       self.class_name = class_name
     else:
       # image name becomes class name
-      class_name = image_path.replace(self.EXTENSION, '')
+      self.class_name = image_path.replace(self.EXTENSION, '')
 
     self.image = cv2.imread(image_path)
     if self.image is None:
