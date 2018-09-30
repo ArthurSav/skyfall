@@ -8,16 +8,21 @@ from tensorflow import keras
 
 from skyfall import utils_image
 
-import matplotlib.pyplot as plt
-
 class Loader:
+
+  """
+  Loads either training or eval data.
+
+  When loader training data the source dir should have children with class images
+  When loading eval data the source dir should contain all the images in that same folder
+  """
   
   IMAGE_TYPE = 'png'
   
   def __init__(self, path):
     self.path = path
   
-  def load_data(self, split_ratio = 0.2, size = 64, normalize = True, verbose = True, max_images_per_class = None):
+  def load_training_data(self, split_ratio = 0.2, size = 64, normalize = True, verbose = True, max_images_per_class = None):
     """
     Loads folders from a source directory.
     Folder names become 'class' names.
@@ -94,6 +99,32 @@ class Loader:
     
     return names, (x_train, y_train), (x_test, y_test)
   
+  def load_eval_data(self, size = 64, normalize = True, verbose = True, max_images = None):
+
+    name, files = self.__load_from_folder(self.path, self.IMAGE_TYPE, True)
+
+    if files is None or len(files) == 0:
+      print('No images found')
+      return
+
+    if verbose:
+      print("Loading path data...")
+      print("Found {} images".format(len(files)))
+      if max_images:
+        print("Limits to {} images".format(max_images))
+
+    if max_images:
+      files = files[:min(max_images, len(files))]    
+
+    images = self.__load_paths_as_array(files, size)
+    images = images.reshape(images.shape[0], size, size, 1).astype('float32')
+
+    if normalize:
+      images = self.__normalize_single(images)
+    
+    print('Exporting size: {}x{}'.format(size, size))
+    return images
+
   def __load_paths_as_array(self, paths, size):
     """
     paths: a list of image paths i.e /train/images/hello.jpg ...
@@ -123,10 +154,8 @@ class Loader:
     y = y[permutation]
 
     return x, y
-  
 
   def __normalize(self, x_train, y_train, x_test, y_test, number_of_classes):
-
     """
     Normalize images to a range of [0, 1] and image labels binary matrixes
     """
@@ -146,6 +175,12 @@ class Loader:
     y_test = keras.utils.to_categorical(y_test, number_of_classes)
 
     return x_train, y_train, x_test, y_test
+
+  def __normalize_single(self, images):
+    if images.dtype != 'float32':
+      images = images.astype('float32')
+    images = (images - np.min(images)) / np.ptp(images)
+    return images
  
   def __load_square_image(self, path, size):
     """
@@ -173,7 +208,7 @@ class Loader:
 
     # load images    
     for folder in folders:
-      name, files = self.__load_from_folder(folder, file_type = IMAGE_TYPE)
+      name, files = self.__load_from_folder(folder, file_type = self.IMAGE_TYPE)
       if len(files) > 0:
         classes.append([name, files])
 
