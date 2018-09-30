@@ -101,7 +101,7 @@ class Loader:
     image_size = len(images)
     labels = np.full(image_size, class_id)
 
-    vfold_size = int((image_size / 100.0) * (split_ratio * 100.0))
+    vfold_size = int((image_size / 100.0) * (split * 100.0))
 
     train = images[vfold_size:image_size]
     train_labels = labels[vfold_size: image_size]
