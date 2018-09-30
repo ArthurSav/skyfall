@@ -55,23 +55,16 @@ class Loader:
     for idx, class_data in enumerate(classes):
       class_name = class_data[0]
       class_images = class_data[1]
+      names.append(class_name)
       
+      # limit images per class
       if max_images_per_class:
         class_images = class_images[:min(max_images_per_class, len(class_images))]
 
       print("name: {}, images: {}".format(class_name, len(class_images)))
       
       # split into train, test
-      image_size = len(class_images)
-      vfold_size = int((image_size / 100.0) * (split_ratio * 100.0))
-      
-      labels = np.full(image_size, idx)
-      names.append(class_name)
-      
-      train = class_images[vfold_size:image_size]
-      train_labels = labels[vfold_size: image_size]
-      test = class_images[0: vfold_size]
-      test_labels = labels[0: vfold_size]
+      train, train_labels, test, test_labels = self.__split(class_images, idx, split= split_ratio)
       
       train_paths = np.concatenate((train_paths, train))
       test_paths = np.concatenate((test_paths, test))
@@ -99,7 +92,24 @@ class Loader:
     print("x_train: {}, x_test: {}".format(len(x_train), len(x_test))) 
     
     return names, (x_train, y_train), (x_test, y_test)
-  
+
+  def __split(self, images, class_id, split = 0.2):
+    """
+    Split images of a single class into training and test sets based on provided ratio
+    """
+
+    image_size = len(images)
+    labels = np.full(image_size, class_id)
+
+    vfold_size = int((image_size / 100.0) * (split_ratio * 100.0))
+
+    train = images[vfold_size:image_size]
+    train_labels = labels[vfold_size: image_size]
+    test = images[0: vfold_size]
+    test_labels = labels[0: vfold_size]
+
+    return train, train_labels, test, test_labels
+
   def load_predict_data(self, size = 64, normalize = True, verbose = True, max_images = None):
 
     name, files = self.__load_from_folder(self.path, self.IMAGE_TYPE, True)
