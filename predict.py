@@ -6,7 +6,7 @@ class Predict:
     model = None
     class_names = None
 
-    def __init__(self, model_path = None, model = None, class_names):
+    def __init__(self, class_names, model_path = None, model = None):
         """
         model_path: path to pre-trained model
         class_names: class names corresponding to predictions
