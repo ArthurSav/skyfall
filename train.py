@@ -1,8 +1,6 @@
-from tensorflow.keras import layers
-from tensorflow import keras 
-import tensorflow as tf
+from keras.models import Sequential
+from keras.layers import Conv2D, Dense, Flatten, MaxPooling2D
 import matplotlib.pylab as plt
-
 from enum import Enum
 
 from skyfall import utils_image
@@ -22,29 +20,26 @@ class Train:
         Builds base model for greyscale (single channel) images
 
         shape: image shape (h, w, channel) i.e (28, 28, 1)
-        outputs: possible numeric outcomes/labels i.e [0, 1, 2, 3, 5, 6]
+        outcomes: possible numeric outcomes/labels i.e [0, 1, 2, 3, 5, 6] (normalized)
 
         return new model
         """
 
         # define model
-        model = keras.Sequential()
-        model.add(layers.Convolution2D(16, (3, 3),
-                                padding='same',
-                                input_shape=shape, activation='relu'))
-        model.add(layers.MaxPooling2D(pool_size=(2, 2)))
-        model.add(layers.Convolution2D(32, (3, 3), padding='same', activation= 'relu'))
-        model.add(layers.MaxPooling2D(pool_size=(2, 2)))
-        model.add(layers.Convolution2D(64, (3, 3), padding='same', activation= 'relu'))
-        model.add(layers.MaxPooling2D(pool_size =(2,2)))
-        model.add(layers.Flatten())
-        model.add(layers.Dense(128, activation='relu'))
-        model.add(layers.Dense(outcomes, activation='softmax')) 
+        model = Sequential()
+        model.add(Conv2D(16, kernel_size =(3, 3),padding='same',input_shape=shape, activation='relu'))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(Conv2D(32, kernel_size =(3, 3), padding='same', activation= 'relu'))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(Conv2D(64, kernel_size =(3, 3), padding='same', activation= 'relu'))
+        model.add(MaxPooling2D(pool_size =(2,2)))
+        model.add(Flatten())
+        model.add(Dense(128, activation='relu'))
+        model.add(Dense(outcomes, activation='softmax')) 
 
         # compile
-        adam = tf.train.AdamOptimizer()
         model.compile(loss='categorical_crossentropy',
-                        optimizer=adam,
+                        optimizer='adam',
                         metrics=['top_k_categorical_accuracy'])
 
         if verbose:
