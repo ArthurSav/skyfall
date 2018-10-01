@@ -124,7 +124,7 @@ def show_prediction_list(images, class_names, predictions, size = None, labels =
     
   if columns is None and size <= 10:
     columns = 2
-  elif column is None:
+  elif columns is None:
     columns = 10
 
   if columns > size:
