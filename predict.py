@@ -12,7 +12,7 @@ class Predict:
         class_names: class names corresponding to predictions
         """
 
-        self.class_name = class_names
+        self.class_names = class_names
 
         if model is not None:
             self.model = model
