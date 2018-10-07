@@ -33,10 +33,6 @@ class Predict:
         show_predictions: if true it will plot predictions alongside provided images
         """
         predictions = self.model.predict(images)
-
-        columns = None
-        if len(images) <= 10:
-            columns = 2
         
         # plot images and show their scores
-        utils_image.show_prediction_list(images = images, predictions = predictions, class_names = self.class_names, columns = columns)
+        utils_image.show_prediction_list(images = images, predictions = predictions, class_names = self.class_names)
