@@ -5,10 +5,7 @@ import os
 
 from enum import Enum
 
-class CropType(Enum):
-  NONE = 0
-  MOBILE = 1 # Asssumes we're processing a mobile screen
-  TRAINING = 2 # Assumes we're dealing with training images
+from skyfall.models.model_utils import CropType
 
 class ContourFinder:
 
