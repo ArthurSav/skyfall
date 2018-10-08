@@ -1,10 +1,9 @@
 from keras.models import Sequential
 from keras.layers import Conv2D, Dense, Flatten, MaxPooling2D
 import matplotlib.pylab as plt
-from enum import Enum
 
-from skyfall import utils_image
-from skyfall import utils_train
+from skyfall.utils import utils_image
+from skyfall.utils import utils_train
 
 class Train:
 

@@ -1,6 +1,6 @@
 from keras.models import load_model
-from skyfall import utils_image
-from skyfall.model.models_p1 import *
+from skyfall.utils import utils_image
+from skyfall.models.model_p1 import MetadataContour, MetadataPrediction
 import numpy as np
 
 class Predict:

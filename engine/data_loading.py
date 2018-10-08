@@ -6,7 +6,7 @@ import os
 from skimage.transform import rescale, resize, downscale_local_mean, pyramid_reduce
 from tensorflow import keras
 
-from skyfall import utils_image
+from skyfall.utils import utils_image
 
 class Loader:
 

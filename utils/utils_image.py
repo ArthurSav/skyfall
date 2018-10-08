@@ -4,16 +4,11 @@ import numpy as np
 import matplotlib.pylab as plt
 from skimage.transform import rescale, resize, downscale_local_mean, pyramid_reduce
 
-from enum import Enum
+from skyfall.models.model_utils import DisplaySize
 
 """
 Image manipulation utils
 """
-
-class DisplaySize(Enum):
-  SMALL = 0
-  MEDIUM = 1
-  BIG = 2
 
 def convert_to_square(image, size, retain_aspect_ratio = False):
     """
