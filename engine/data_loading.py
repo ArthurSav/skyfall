@@ -9,19 +9,37 @@ from tensorflow import keras
 from skyfall.utils import utils_image
 
 class Loader:
-
-  """
-  Loads either training or eval data.
-
-  When loader training data the source dir should have children with class images
-  When loading eval data the source dir should contain all the images in that same folder
-  """
   
   IMAGE_TYPE = 'png'
   path = None
+
+  images = None
+  name = None
   
-  def __init__(self, path):
-    self.path = path
+  def __init__(self, path = None, images = None, name = None):
+
+    """
+    Loads either training or eval data.
+
+    When loader training data the source dir should have children with class images
+    When loading eval data the source dir should contain all the images in that same folder
+
+    path: folder path where images are located
+    images: numpy array of images (instead of path)
+    name: class name of images (instead of path)
+    """
+
+    if path is not None:
+      self.path = path
+    elif images is not None and (name is None or not name):
+      print("class name must be provided along images")
+    elif images is None and name is not None:
+      print("images must be provided along class name")
+    elif images is not None and name is not None:
+      self.images = images
+      self.name = name
+    else:
+      print("Please provide a path or images / class name")
   
   def load_training_data(self, split_ratio = 0.2, size = 64, normalize = True, verbose = True, max_images_per_class = None):
     """
@@ -110,24 +128,27 @@ class Loader:
 
     return train, train_labels, test, test_labels
 
-  def load_predict_data(self, size = 64, normalize = True, verbose = True, max_images = None):
+  def load_predict_data(self, size = 64, normalize = True, verbose = True):
 
-    name, files = self.__load_from_folder(self.path, self.IMAGE_TYPE, True)
+    if self.path is not None:
+      name, files = self.__load_from_folder(self.path, self.IMAGE_TYPE, True)
+      images = self.__load_paths_as_array(files, size)
 
-    if files is None or len(files) == 0:
-      print('No images found')
-      return
+      if files is None or len(files) == 0:
+        print('No images found in {}'.format(self.path))
+        return
+
+    elif self.images is not None and self.name is not None:
+      name = self.name
+      images = self.images
 
     if verbose:
-      print("Loading path data...")
-      print("Found {} images".format(len(files)))
-      if max_images:
-        print("Limits to {} images".format(max_images))
+      print("Loading data...")
+      print("Found {} images for {}".format(len(files), name))
+    if images is None or len(images) == 0:
+      print("No images to load")
+      return
 
-    if max_images:
-      files = files[:min(max_images, len(files))]    
-
-    images = self.__load_paths_as_array(files, size)
     images = images.reshape(images.shape[0], size, size, 1).astype('float32')
 
     if normalize:
