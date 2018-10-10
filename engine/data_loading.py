@@ -19,7 +19,7 @@ class Loader:
   def __init__(self):
     pass
   
-  def load_training_data(self, path, split_ratio = 0.2, size = 64, normalize = True, verbose = True, max_images_per_class = None):
+  def load_training_data(self, path, split_ratio = 0.2, size = 64, normalize = True, invert = True, verbose = True, max_images_per_class = None):
     """
     Loads folders from a source directory.
     Folder names become 'class' names.
@@ -150,6 +150,7 @@ class Loader:
 
     for path in paths:
       image = self.__load_square_image(path, size)
+      image = np.invert(image)
       x = np.concatenate((x, image.reshape(1, size, size)))
 
     return x
@@ -164,6 +165,7 @@ class Loader:
     x = np.empty([0, size, size])
     for image in images:
       square = utils_image.convert_to_square(image, size)
+      square = np.invert(square)
       x = np.concatenate((x, square.reshape(1, size, size)))
     
     return x
