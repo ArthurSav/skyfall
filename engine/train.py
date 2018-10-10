@@ -8,7 +8,7 @@ from skyfall.utils import utils_train
 class Train:
 
     model = None
-    model_save_name = 'weights.h5'
+    model_save_name = 'model.h5'
 
     def __init__(self):
         pass
