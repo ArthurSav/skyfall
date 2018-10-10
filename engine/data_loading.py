@@ -9,39 +9,17 @@ from tensorflow import keras
 from skyfall.utils import utils_image
 
 class Loader:
+
+  """
+  Load, preprocess, normalize images for training/eval
+  """
   
   IMAGE_TYPE = 'png'
-  path = None
-
-  images = None
-  name = None
   
-  def __init__(self, path = None, images = None, name = None):
-
-    """
-    Loads either training or eval data.
-
-    When loader training data the source dir should have children with class images
-    When loading eval data the source dir should contain all the images in that same folder
-
-    path: folder path where images are located
-    images: numpy array of images (instead of path)
-    name: class name of images (instead of path)
-    """
-
-    if path is not None:
-      self.path = path
-    elif images is not None and (name is None or not name):
-      print("class name must be provided along images")
-    elif images is None and name is not None:
-      print("images must be provided along class name")
-    elif images is not None and name is not None:
-      self.images = images
-      self.name = name
-    else:
-      print("Please provide a path or images / class name")
+  def __init__(self):
+    pass
   
-  def load_training_data(self, split_ratio = 0.2, size = 64, normalize = True, verbose = True, max_images_per_class = None):
+  def load_training_data(self, path, split_ratio = 0.2, size = 64, normalize = True, verbose = True, max_images_per_class = None):
     """
     Loads folders from a source directory.
     Folder names become 'class' names.
@@ -52,7 +30,7 @@ class Loader:
     return class names, training data with labels, testing data with labels
     """
     
-    classes = self.__load_from_root(self.path)
+    classes = self.__load_from_root(path)
     
     # class names (should be unique)
     names = []
@@ -128,26 +106,27 @@ class Loader:
 
     return train, train_labels, test, test_labels
 
-  def load_predict_data(self, size = 64, normalize = True, verbose = True):
+  def load_predict_data(self, path = None, images = None, size = 64, normalize = True):
 
-    if self.path is not None:
-      name, files = self.__load_from_folder(self.path, self.IMAGE_TYPE, True)
+    """
+    path: a directory path that contains the images we want to load
+    images: a list of images (used if no path is provided)
+    size: image resize size
+    normalize: if true, normalized images for training/eval
+    """
+
+    if path is not None:
+      name, files = self.__load_from_folder(path, self.IMAGE_TYPE, True)
       images = self.__load_paths_as_array(files, size)
+    elif images is not None and isinstance(images,(list,)):
+      images = self.__load_list_as_array(images, size)
+    else:
+      raise ValueError('Nothing to load')
 
-      if files is None or len(files) == 0:
-        print('No images found in {}'.format(self.path))
-        return
+    if images is None:
+      raise ValueError('Could not load images')
 
-    elif self.images is not None and self.name is not None:
-      name = self.name
-      images = self.images
-
-    if verbose:
-      print("Loading data...")
-      print("Found {} images for {}".format(len(files), name))
-    if images is None or len(images) == 0:
-      print("No images to load")
-      return
+    print("Loaded {} images".format(len(images)))
 
     images = images.reshape(images.shape[0], size, size, 1).astype('float32')
 
@@ -159,8 +138,10 @@ class Loader:
 
   def __load_paths_as_array(self, paths, size):
     """
+    Convert a list of image paths into a numpy array of resized images
+
     paths: a list of image paths i.e /train/images/hello.jpg ...
-    size: image size
+    size: image size to resize to
 
     return a numpy array of loaded square images of shape i.e (num, size, size, 1)
     """
@@ -179,6 +160,7 @@ class Loader:
     images: a list of images
     size: image size to resize to
     """
+
     x = np.empty([0, size, size])
     for image in images:
       square = utils_image.convert_to_square(image, size)
@@ -201,7 +183,7 @@ class Loader:
 
   def __normalize(self, x_train, y_train, x_test, y_test, number_of_classes):
     """
-    Normalize images to a range of [0, 1] and image labels binary matrixes
+    Normalize images to a range of [0, 1] and image labels to binary matrixes
     """
 
     if x_train.dtype != 'float32':
