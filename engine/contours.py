@@ -6,6 +6,7 @@ import os
 from enum import Enum
 
 from skyfall.models.model_utils import CropType
+from skyfall.models.model_p1 import MetadataContour
 
 class ContourFinder:
 
@@ -13,6 +14,7 @@ class ContourFinder:
   class_name = None
   image = None
   cropped = None
+  metadata = None
   image_with_contours = None
   
   def __init__(self, image_path, class_name = None):
@@ -141,7 +143,6 @@ class ContourFinder:
       
     return filtered_contours, filtered_hierarchy
     
-  
   def __find(self, hierarchy_type = cv2.RETR_TREE):
     """
     hierarchy_type: RETR_LIST, RETR_EXTERNAL, RETR_CCOMP, RETR_TREE
@@ -165,15 +166,14 @@ class ContourFinder:
     
     return contours, hierarchy
 
-
   def crop(self, mode, crop_padding = 10, verbose = False):
     """
     mode: MOBILE, TRAINING
     min_contour_dimen: ignores anything below specified dimention when applying contours
     crop_padding: padding to apply when cropping contours
     crop: if true, it will crop contours
+
     return: image with applied contours, cropped contours
-   
     """
     
     image = self.image
@@ -192,12 +192,16 @@ class ContourFinder:
     if verbose:
         print("Cropping... mode: {} contours found: {}".format(mode.name, len(contours)))  
  
-    cropped = []
+    cropped, metadata = [], []
     
     for c in contours:
       
       # rectangle coordinates
       x, y, w, h = cv2.boundingRect(c)
+    
+      # cropping metadata
+      metadata_contour = MetadataContour(x, y, w, h)
+      metadata.append(metadata_contour)
 
       # crop contour & convert to grayscale
       cropped_image = image[y - crop_padding: y + h + (crop_padding * 2) ,x - crop_padding: x + w + (crop_padding * 2)]
@@ -213,6 +217,7 @@ class ContourFinder:
 
     self.image_with_contours = image_with_contours
     self.cropped = cropped
+    self.metadata = metadata
     
   def save_images(self, images = None, class_name = None, override_existing = False, verbose = False, destination = 'data'):
 
