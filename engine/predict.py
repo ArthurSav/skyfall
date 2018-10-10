@@ -51,7 +51,7 @@ class Predict:
 
                 metadata_predictions.append(metadata_prediction)
 
-        
+
         # plot images and show their scores
         utils_image.show_prediction_list(images = images, predictions = predictions, class_names = self.class_names)
 

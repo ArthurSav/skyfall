@@ -23,8 +23,3 @@ class MetadataPrediction():
         self.predicted_label = predicted_label
         self.predicted_label_name = predicted_label_name
         self.score = score
-
-
-
-
-        
