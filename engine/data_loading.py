@@ -172,6 +172,19 @@ class Loader:
       x = np.concatenate((x, image.reshape(1, size, size)))
 
     return x
+  
+  def __load_list_as_array(self, images, size):
+    """
+    Convert an image list into a numpy array of resized images
+    images: a list of images
+    size: image size to resize to
+    """
+    x = np.empty([0, size, size])
+    for image in images:
+      square = utils_image.convert_to_square(image, size)
+      x = np.concatenate((x, square.reshape(1, size, size)))
+    
+    return x
 
   def __shuffle(self, x, y):
     """
