@@ -169,7 +169,6 @@ class Loader:
 
     for path in paths:
       image = self.__load_square_image(path, size)
-      image = np.invert(image) # white background, black content
       x = np.concatenate((x, image.reshape(1, size, size)))
 
     return x
