@@ -53,6 +53,7 @@ class Predict:
 
 
         # plot images and show their scores
-        utils_image.show_prediction_list(images = images, predictions = predictions, class_names = self.class_names)
+        if show_predictions:
+            utils_image.show_prediction_list(images = images, predictions = predictions, class_names = self.class_names)
 
         return metadata_predictions
