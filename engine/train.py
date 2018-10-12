@@ -46,13 +46,13 @@ class Train:
 
         return model
     
-    def train(self, x_train, y_train, x_test, y_test):
+    def train(self, x_train, y_train, x_test, y_test, verbose = 2, epochs = 5):
 
         shape = x_train.shape[1:]
         outcomes = y_train.shape[1]
 
         model = self.__build_model(shape = shape, outcomes = outcomes)
-        model.fit(x = x_train, y = y_train, validation_split=0.1, batch_size=256, verbose=2, epochs=5)
+        model.fit(x = x_train, y = y_train, validation_split=0.1, batch_size=256, verbose= verbose, epochs= epochs)
         
         self.model = model
 
