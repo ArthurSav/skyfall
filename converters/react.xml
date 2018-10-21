@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<project path="/hello/files/ReactComponent.js" name="skyfall">
+  <component name="toolbar">
+    <![CDATA[
+    <ToolbarAndroid 
+            style={styles.toolbar} 
+            title="Test title" 
+            navIcon={require("../assets/images/robot-dev.png")} />
+          ]]>
+  </component>
+
+  <component name="toolbar_search">
+    <![CDATA[
+    <ToolbarAndroid 
+            style={styles.toolbar} 
+            title="Test title" 
+            navIcon={require("../assets/images/robot-dev.png")} 
+            actions={[{ title: 'Search', show: 'always' }]} 
+            onActionSelected={this.onActionSelected} />
+          ]]>
+  </component>
+
+  <component name="checkbox">
+    <![CDATA[
+    <Text style={styles.getStartedText}>
+            The future is here!
+            </Text>
+          ]]>
+  </component>
+
+  <component name="button">
+    <![CDATA[
+    <Button
+        onPress={onPressLearnMore}
+        title="Learn More"
+        color="#841584"
+        accessibilityLabel="Learn more about this purple button"
+    />
+          ]]>
+  </component>
+
+  <component name="image">
+    <![CDATA[
+    <Image style={{ width: 50, height: 50 }} source={{ uri: 'https://facebook.github.io/react-native/docs/assets/favicon.png' }}
+    />
+          ]]>
+  </component>
+
+  <component name="list">
+    <![CDATA[
+    <FlatList data={[{ key: 'This is item 1' }, { key: 'This is item 2' }]} renderItem={({ item }) =><Text>{item.key}</Text>}
+    />
+          ]]>
+  </component>
+
+  <template>
+    <![CDATA[
+    import React, { Component } from 'react'
+    import { Text, View, ToolbarAndroid, StyleSheet, Image, FlatList } from 'react-native'
+
+          export default class {_FILENAME_} extends Component {
+
+              static navigationOptions = { header: null }
+
+              render() {
+                  return (
+                      <View style={{ marginTop: 24 }}>
+                          {_COMPONENTS_}
+                      </View>
+                  )
+              }
+          }
+
+          const styles = StyleSheet.create({
+              toolbar: {
+                  backgroundColor: '#2196F3',
+                  height: 56
+              },
+          });
+          ]]>
+  </template>
+</project>
