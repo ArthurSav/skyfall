@@ -11,7 +11,7 @@ class ReactConverter():
       
     generated_code = None
 
-    project_filepath = None # file to be modified after code is generated i.e /project/hello/ScreenComponent.js
+    injectable_file = None # file to be modified after code is generated i.e /project/hello/ScreenComponent.js
     template_components = None
     template_file = None # code of the template to generate
     filename_base = None
@@ -27,7 +27,11 @@ class ReactConverter():
 
         self.__load_file_data(file)
         
-    def generate(self, components_to_generate):
+    def generate(self, components_to_generate, update_file = False):
+      """
+      components_to_generate: list of named components to inject
+      update_file: if true, it will update the file provided in the template
+      """
       
       # create a list of code to inject
       generated_components = self.__generate_components(self.template_components, components_to_generate)
@@ -35,7 +39,29 @@ class ReactConverter():
       # inject code into template
       generated_template = self.__generate_template(self.filename_base, generated_components)
       
+      # inject template into file
+      if update_file:
+        self.__load_code_into_file(self.injectable_file, generated_template)
+      
       return generated_template
+    
+    def __load_code_into_file(self, filepath, code):
+      
+      # check a file with an extension is provided
+      fileinfo = os.path.splitext(os.path.basename(filepath))
+      if len(fileinfo) < 2:
+        print('Could not load code into {}'.format(filepath))
+        print('Please provide a valid file')
+        return
+      
+      print('Injecting code into {}'.format(filepath))
+          
+      injectable_file = open(filepath, "w+")
+      injectable_file.write(code)
+      injectable_file.close()
+      
+      print('File updated!')
+          
         
     def __generate_template(self, filename_base, generated_components):
       """
@@ -80,6 +106,16 @@ class ReactConverter():
         print(g_names)
         
         return g_components
+      
+    def __generated_components_to_string(self, generated_components):
+      """
+      return a single string of all components code
+      """
+      str = ""
+      for c in generated_components:
+        str += c['code']
+        
+      return str
           
       
     def __load_file_data(self, xml_template_filepath):
@@ -120,19 +156,8 @@ class ReactConverter():
       print('Project file to modify: {}'.format(path))
       print('Template components: {}'.format(component_names))
       
-      self.project_filepath = path
+      self.injectable_file = path
       self.template_components = components
       self.template_file = template
       
       self.filename_base = os.path.basename(path)
-      
-      
-    def __generated_components_to_string(self, generated_components):
-      """
-      return a single string of all components code
-      """
-      str = ""
-      for c in generated_components:
-        str += c['code']
-        
-      return str
