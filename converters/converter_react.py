@@ -1,4 +1,5 @@
 import os
+import autopep8 as pep
 import xml.etree.ElementTree as et
 
 class ReactConverter():
@@ -49,6 +50,9 @@ class ReactConverter():
       template = self.template_file
       template = template.replace(self.replace_var_filename, filename_base)
       template = template.replace(self.replace_var_components, injectable_code_components)
+      
+      # pep8 code format
+      template = pep.fix_code(template, options={'select': ['E1', 'W1']})  
       
       return template
         
@@ -130,4 +134,5 @@ class ReactConverter():
       str = ""
       for c in generated_components:
         str += c['code']
+        
       return str
