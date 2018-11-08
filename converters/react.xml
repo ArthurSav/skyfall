@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<project path="/hello/files/ReactComponent.js" name="skyfall">
+<project path="ReactComponent.js" name="skyfall">
   <component name="toolbar">
     <![CDATA[
     <ToolbarAndroid 
