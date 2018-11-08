@@ -104,7 +104,7 @@ class ContourFinder:
         
     return filtered_contours, filtered_hierarchy
 
-  def __calculate_percentage_area(self,w1, h1, w2, h2):
+  def __calculate_percentage_area(self, w1, h1, w2, h2):
     """
     Compares 2 surface areas
     return the percentage of area2 compared to area1 (i.e area 2 is 80% of area 1)
