@@ -21,6 +21,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
     """
 
     camera_manager = CameraManager()
+    finder = ContourFinder()
 
 
     def __init__(self, parent = None):
@@ -65,7 +66,9 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
     #############################
 
     def update_frame_v2(self, frame):
-        finder = ContourFinder(frame)
+        finder = self.finder
+
+        finder.load_image(frame)
         finder.crop(CropType.TRAINING, verbose = True)
 
         image = finder.image_with_contours
