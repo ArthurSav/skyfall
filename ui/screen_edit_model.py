@@ -89,43 +89,6 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         self.widgetCamera.setImage(img)
 
 
-
-    def update_frame(self, image = None):
-
-        if image is None:
-            return
-        
-        imgray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        ret, thresh = cv2.threshold(imgray, 127, 255, 0)
-        im2, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        # cv2.drawContours(image, contours, -1, (0,255,0), 3)
-
-        for c in contours:
-            # get the bounding rect
-            x, y, w, h = cv2.boundingRect(c)
-            # draw a green rectangle to visualize the bounding rect
-
-            if w < 80 and h < 80:
-                continue
-
-            cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
-
-        img_height, img_width, img_colors = image.shape
-        scale_w = float(self.window_width) / float(img_width)
-        scale_h = float(self.window_height) / float(img_height)
-        scale = min(scale_w, scale_h)
-
-        if scale == 0:
-            scale = 1
-
-        image = cv2.resize(image, None, fx=scale, fy=scale, interpolation = cv2.INTER_CUBIC)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        height, width, bpc = image.shape
-        bpl = bpc * width
-        img = QImage(image.data, width, height, bpl, QImage.Format_RGB888)
-        self.widgetCamera.setImage(img)
-
     def closeEvent(self, event):
         self.camera_manager.close_camera()
             
