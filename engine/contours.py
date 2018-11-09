@@ -4,8 +4,9 @@ import os
 
 from enum import Enum
 
-from skyfall.models.model_utils import CropType
-from skyfall.models.model_p1 import MetadataContour
+from models.model_utils import CropType
+from models.model_p1 import MetadataContour
+
 
 class ContourFinder:
 
