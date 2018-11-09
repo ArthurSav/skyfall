@@ -209,16 +209,17 @@ class ContourFinder:
       metadata.append(metadata_contour)
 
       # crop contour & convert to grayscale
-      cropped_image = image[y - crop_padding: y + h + (crop_padding * 2) ,x - crop_padding: x + w + (crop_padding * 2)]
-      cropped_image = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2GRAY)
-      cropped.append(cropped_image)
+      #cropped_image = image[y - crop_padding: y + h + (crop_padding * 2) ,x - crop_padding: x + w + (crop_padding * 2)]
+      #cropped_image = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2GRAY)
+      #cropped.append(cropped_image)
         
       # draw contour
       peri = cv2.arcLength(c, True)
       approx = cv2.approxPolyDP(c, 0.02 * peri, True)
       cv2.drawContours(image_with_contours, [approx], -1, (0, 255, 0), 2)
 
-    print("Cropped images: {}".format(len(cropped)))
+    if verbose:
+      print("Cropped images: {}".format(len(cropped)))
 
     self.image_with_contours = image_with_contours
     self.cropped = cropped
