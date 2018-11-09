@@ -5,6 +5,8 @@ from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtGui import QPainter, QImage
 from utils.utils_camera import CameraManager
 from ui.widgets import ImageWidget
+from engine.contours import ContourFinder
+from models.model_utils import CropType
 
 import numpy as np
 import cv2, os
@@ -20,15 +22,17 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
 
     camera_manager = CameraManager()
 
+
     def __init__(self, parent = None):
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
 
-        self.widgetCamera = ImageWidget(self.widgetCamera)
         self.window_width = 700
         self.window_height = 700
-
-        print("Height:{}, Width:{}".format(self.window_height, self.window_width))
+        # self.window_width = self.widgetCamera.frameSize().width()
+        # self.window_height = self.widgetCamera.frameSize().height()
+        # print("Height:{}, Width:{}".format(self.widgetCamera.frameSize().height(), self.widgetCamera.frameSize().width()))
+        self.widgetCamera = ImageWidget(self.widgetCamera)
 
         self.btnLive.clicked.connect(self.__on_click_recording)
         self.btnPicture.clicked.connect(self.__on_click_picture)
@@ -50,7 +54,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
             self.camera_manager.close_camera()
         else:
             self.btnLive.setText("Stop recording")
-            self.camera_manager.open_camera(self, self.update_frame)
+            self.camera_manager.open_camera(self, self.update_frame_v2)
 
     def __on_click_picture(self):
         """
@@ -60,9 +64,30 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
 
     #############################
 
+    def update_frame_v2(self, frame):
+        finder = ContourFinder(frame)
+        finder.crop(CropType.TRAINING, verbose = True)
+
+        image = finder.image_with_contours
+
+        img_height, img_width, img_colors = image.shape
+        scale_w = float(self.window_width) / float(img_width)
+        scale_h = float(self.window_height) / float(img_height)
+        scale = min(scale_w, scale_h)
+
+        if scale == 0:
+            scale = 1
+
+        image = cv2.resize(image, None, fx=scale, fy=scale, interpolation = cv2.INTER_CUBIC)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        height, width, bpc = image.shape
+        bpl = bpc * width
+        img = QImage(image.data, width, height, bpl, QImage.Format_RGB888)
+        self.widgetCamera.setImage(img)
+
+
+
     def update_frame(self, image = None):
-        if image is None and not self.queue.empty():
-            image = self.queue.get()
 
         if image is None:
             return
