@@ -17,25 +17,30 @@ class ContourFinder:
   metadata = None
   image_with_contours = None
   
-  def __init__(self, image_path, class_name = None):
+  def __init__(self):
+    pass
+
+  def load_image_path(self, path):
     """
-    image_path: i.e hello/image.png
-    class_name: i.e hello (used to name the parent folder when saving images)
+    path: i.e hello/image.png
     """
 
-    if image_path is None:
-      print("Please provide a valid image path")
+    if path is None or not path:
+      print("Nothing to load")
       return
 
-    if class_name is not None:
-      self.class_name = class_name
-    else:
-      # image name becomes class name
-      self.class_name = image_path.replace(self.EXTENSION, '')
+    self.image = cv2.imread(path)
 
-    self.image = cv2.imread(image_path)
-    if self.image is None:
+  def load_image(self, image):
+    """
+    Load numpy image
+    """
+
+    if image is None:
       print("No image found")
+      return
+
+    self.image = image
     
   def __find_mobile_screen_contours(self, min_contour_dimen = 50, max_contour_percentage = 75, min_layer =1, max_layer = 3, verbose = False):
     """
