@@ -1,9 +1,8 @@
 class MetadataContour():
-
     x = None
     y = None
-    w = None # width
-    h = None # height
+    w = None  # width
+    h = None  # height
 
     def __init__(self, x, y, w, h):
         self.x = x
@@ -11,8 +10,8 @@ class MetadataContour():
         self.w = w
         self.h = h
 
-class MetadataPrediction():
 
+class MetadataPrediction:
     metadata_contour = None
     predicted_label = None
     predicted_label_name = None

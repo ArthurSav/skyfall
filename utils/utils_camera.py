@@ -1,10 +1,11 @@
-import sys, cv2, threading, time
-from PyQt5 import QtCore
-import numpy as np
 import queue as Queue
 
-class CameraManager:
+import cv2
+import threading
+from PyQt5 import QtCore
 
+
+class CameraManager:
     """
     Handles camera actions in an async thread for smooth experience.
 
@@ -19,14 +20,14 @@ class CameraManager:
     video_thread = None
     timer = None
 
-    camera_id = 0
+    camera_id = 1
 
     view = None
 
     def __init__(self):
         pass
 
-    def open_camera(self, ui, callback, width = 1920, height = 1080, fps = 30):
+    def open_camera(self, ui, callback, width=1920, height=1080, fps=30):
         """
         camera operations will run in a new thread
 
@@ -37,7 +38,7 @@ class CameraManager:
         fps: camera fps
         """
 
-        self.video_thread = threading.Thread(target=self.__open_camera, args = (width, height, fps))
+        self.video_thread = threading.Thread(target=self.__open_camera, args=(width, height, fps))
 
         # timer that updates frames from queue periodically
         # todo - find a replacement for this timer since it requires the QT ui
@@ -47,21 +48,21 @@ class CameraManager:
 
         self.video_thread.start()
 
-    def __open_camera(self, width, height, fps, flip = True):
+    def __open_camera(self, width, height, fps, flip=True):
         """
         Simple camera operation with openCV
         note: don't forget to close the camera with close_camera()
         """
 
         self.is_running = True
-        
+
         self.capture = cv2.VideoCapture(self.camera_id)
 
         self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         self.capture.set(cv2.CAP_PROP_FPS, fps)
 
-        while(self.is_running):
+        while (self.is_running):
             ret, frame = self.capture.read()
 
             # hold a limited number of frames in queue
@@ -76,7 +77,6 @@ class CameraManager:
         print("Closing camera...")
         self.capture.release()
         cv2.destroyAllWindows()
-    
 
     def __on_frame_update(self, callback):
         if self.queue.empty():

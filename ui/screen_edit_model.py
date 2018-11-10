@@ -15,6 +15,7 @@ import cv2, os
 dir_path = os.path.dirname(os.path.realpath(__file__))
 screen_edit_model_ui = uic.loadUiType(dir_path + '/screen_edit_model.ui')[0]
 
+
 class ScreenEditModel(QMainWindow, screen_edit_model_ui):
     """
     UI manager for screen 'Add or Edit model'
@@ -23,8 +24,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
     camera_manager = CameraManager()
     finder = ContourFinder()
 
-
-    def __init__(self, parent = None):
+    def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
 
@@ -41,8 +41,6 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         # start recording by default
         self.__on_click_recording()
 
-    #############################     
-
     def __on_click_recording(self):
         """
         Opens camera and displays video
@@ -55,7 +53,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
             self.camera_manager.close_camera()
         else:
             self.btnLive.setText("Stop recording")
-            self.camera_manager.open_camera(self, self.update_frame_v2)
+            self.camera_manager.open_camera(self, self.update_frame)
 
     def __on_click_picture(self):
         """
@@ -63,13 +61,11 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         """
         QtWidgets.QApplication.processEvents()
 
-    #############################
-
-    def update_frame_v2(self, frame):
+    def update_frame(self, frame):
         finder = self.finder
 
         finder.load_image(frame)
-        finder.crop(CropType.TRAINING, verbose = True)
+        finder.crop(CropType.TRAINING, verbose=True)
 
         image = finder.image_with_contours
 
@@ -81,17 +77,12 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         if scale == 0:
             scale = 1
 
-        image = cv2.resize(image, None, fx=scale, fy=scale, interpolation = cv2.INTER_CUBIC)
+        image = cv2.resize(image, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         height, width, bpc = image.shape
         bpl = bpc * width
         img = QImage(image.data, width, height, bpl, QImage.Format_RGB888)
         self.widgetCamera.setImage(img)
 
-
     def closeEvent(self, event):
         self.camera_manager.close_camera()
-            
-        
-
-        
