@@ -27,7 +27,7 @@ class CameraManager:
     def __init__(self):
         pass
 
-    def open_camera(self, ui, callback, width=1920, height=1080, fps=30):
+    def open_camera(self, ui, callback, width=1920, height=1080, fps=10):
         """
         camera operations will run in a new thread
 
@@ -44,7 +44,7 @@ class CameraManager:
         # todo - find a replacement for this timer since it requires the QT ui
         self.timer = QtCore.QTimer(ui)
         self.timer.timeout.connect(lambda: self.__on_frame_update(callback))
-        self.timer.start(10)
+        self.timer.start(1)
 
         self.video_thread.start()
 
