@@ -113,7 +113,7 @@ class ContourFinder:
 
         return filtered_contours, filtered_hierarchy
 
-    def find_training_elements_contours(self, min_contour_dimen=50):
+    def find_training_elements_contours(self, min_contour_dimen=50, max_contour_percentage = 75):
         """
         Contour detection optimized for finding external elements.
         Element separation happens at a parent level only
@@ -127,6 +127,11 @@ class ContourFinder:
         filtered_contours = []
         filtered_hierarchy = []
 
+        if contours is None or hierarchy is None:
+            return
+
+        height, width, bpc = self.image.shape
+
         for idx, item in enumerate(hierarchy[0]):
 
             contour = contours[idx]
@@ -134,6 +139,10 @@ class ContourFinder:
 
             # skip contours that are too small
             if w < min_contour_dimen and h < min_contour_dimen:
+                continue
+
+            # skip contours that are too big (usually it's the screen itself)
+            if self.__calculate_percentage_area(width, height, w, h) > max_contour_percentage:
                 continue
 
             filtered_contours.append(contour)
@@ -170,7 +179,10 @@ class ContourFinder:
         image = self.image
         image_with_contours = image.copy()
 
-        contours, hierarchy = self.find_training_elements_contours()
+        try:
+            contours, hierarchy = self.find_training_elements_contours(max_contour_percentage=50)
+        except TypeError:
+            contours, hierarchy = [], []
 
         if verbose:
             print("Contours found: {}".format(len(contours)))
