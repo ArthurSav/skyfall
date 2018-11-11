@@ -20,7 +20,7 @@ class CameraManager:
     video_thread = None
     timer = None
 
-    camera_id = 1
+    camera_id = 0
 
     view = None
 
