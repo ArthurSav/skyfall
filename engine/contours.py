@@ -209,9 +209,10 @@ class ContourFinder:
             approx = cv2.approxPolyDP(c, 0.02 * peri, True)
             cv2.drawContours(image_with_contours, [approx], -1, (0, 255, 0), 2)
 
+        if verbose:
+            print("contours: {}, cropped: {}".format(len(contours), len(cropped)))
+
         if crop:
-            if verbose:
-                print("Cropped images: {}".format(len(cropped)))
             return image_with_contours, cropped, metadata
 
         return image_with_contours
