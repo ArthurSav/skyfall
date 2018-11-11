@@ -1,10 +1,11 @@
 #!/usr/local/bin/python3
 
-import cv2
 import os
-from PyQt5 import QtWidgets, uic
-from PyQt5.QtGui import QImage
-from PyQt5.QtWidgets import QMainWindow
+
+import cv2
+from PyQt5 import QtWidgets, QtCore, uic
+from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtWidgets import QMainWindow, QLabel
 
 from engine.contours import ContourFinder
 from ui.widgets import ImageWidget
@@ -23,12 +24,16 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
     camera_manager = CameraManager()
     finder = ContourFinder()
 
+    is_video_processing = False
+
+    scaled_crop_image = 150
+
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
 
-        self.window_width = 700
-        self.window_height = 700
+        self.window_width = 940
+        self.window_height = 1500
         # self.window_width = self.widgetCamera.frameSize().width()
         # self.window_height = self.widgetCamera.frameSize().height()
         # print("Height:{}, Width:{}".format(self.widgetCamera.frameSize().height(), self.widgetCamera.frameSize().width()))
@@ -46,13 +51,16 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         """
         QtWidgets.QApplication.processEvents()
 
-        # close if open and vice versa
-        if self.camera_manager.is_camera_open():
+        if not self.camera_manager.is_camera_open():
+            self.camera_manager.open_camera(self, self.update_frame, fps=5)
+
+        # start/stop video analysis
+        if self.is_video_processing:
             self.btnLive.setText("Start recording")
-            self.camera_manager.close_camera()
+            self.is_video_processing = False
         else:
             self.btnLive.setText("Stop recording")
-            self.camera_manager.open_camera(self, self.update_frame, fps=5)
+            self.is_video_processing = True
 
     def __on_click_picture(self):
         """
@@ -76,14 +84,58 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         height, width, bpc = image.shape
         bpl = bpc * width
 
-        finder = self.finder
-        finder.load_image(image)
-
-        # image = finder.draw_external_contours(verbose=True, crop=True)
-        image, cropped, metadata = finder.draw_external_contours(verbose=True, crop=True)
+        if self.is_video_processing:
+            finder = self.finder
+            finder.load_image(image)
+            image, cropped, metadata = finder.draw_external_contours(verbose=True, crop=True)
+            self.on_cropped_images(cropped)
 
         img = QImage(image.data, width, height, bpl, QImage.Format_RGB888)
         self.widgetCamera.setImage(img)
+
+
+
+    def on_cropped_images(self, cropped, columns=5):
+        self.clearLayout(self.gridLayout_2)
+
+        if cropped is None or not cropped:
+            return
+
+        # self.finder.dump(cropped)
+
+        images_size = len(cropped)
+        rows = round((images_size / (columns * 1.0)))
+
+        counter_total = 0
+        for i in range(rows):
+            for j in range(columns):
+
+                if counter_total >= images_size:
+                    break
+
+                image = cropped[counter_total]
+                counter_total += 1
+
+                try:
+                    height, width = image.shape
+                except AttributeError:
+                    continue
+
+                print("width: {}, height: {}".format(width, height))
+                img = QImage(image.data, width, height, width, QImage.Format_Grayscale8)
+                label = QLabel(self)
+                pixmap = QPixmap.fromImage(img)
+                pixmap = pixmap.scaled(self.scaled_crop_image, self.scaled_crop_image, QtCore.Qt.KeepAspectRatio)
+                label.setPixmap(pixmap)
+                self.gridLayout_2.addWidget(label, i, j)
+
+    def clearLayout(self, layout):
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget() is not None:
+                child.widget().deleteLater()
+            elif child.layout() is not None:
+                self.clearLayout(child.layout())
 
     def closeEvent(self, event):
         self.camera_manager.close_camera()
