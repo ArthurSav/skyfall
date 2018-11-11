@@ -88,14 +88,14 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
             finder = self.finder
             finder.load_image(image)
             image, cropped, metadata = finder.draw_external_contours(verbose=True, crop=True)
-            self.on_cropped_images(cropped)
+            self.show_cropped_images(cropped)
 
         img = QImage(image.data, width, height, bpl, QImage.Format_RGB888)
         self.widgetCamera.setImage(img)
 
 
 
-    def on_cropped_images(self, cropped, columns=5):
+    def show_cropped_images(self, cropped, columns=5):
         self.clearLayout(self.gridLayout_2)
 
         if cropped is None or not cropped:
