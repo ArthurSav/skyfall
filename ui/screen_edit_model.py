@@ -5,7 +5,7 @@ import os
 import cv2
 from PyQt5 import QtWidgets, QtCore, uic
 from PyQt5.QtGui import QImage, QPixmap
-from PyQt5.QtWidgets import QMainWindow, QLabel
+from PyQt5.QtWidgets import QMainWindow, QLabel, QFileDialog
 
 from engine.contours import ContourFinder
 from ui.widgets import ImageWidget
@@ -24,18 +24,19 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
     camera_manager = CameraManager()
     finder = ContourFinder()
 
-    is_video_processing = False
-
+    is_processing_enabled = False
     scaled_crop_image = 150
+    video_fps = 5
 
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
 
-        self.window_width = 940
-        self.window_height = 1500
-        # self.window_width = self.widgetCamera.frameSize().width()
-        # self.window_height = self.widgetCamera.frameSize().height()
+        # self.window_width = 940
+        # self.window_height = 1500
+        self.window_width = self.widgetCamera.frameSize().width()
+        self.window_height = self.widgetCamera.frameSize().height()
+        print(self.widgetCamera.frameSize())
         # print("Height:{}, Width:{}".format(self.widgetCamera.frameSize().height(), self.widgetCamera.frameSize().width()))
         self.widgetCamera = ImageWidget(self.widgetCamera)
 
@@ -43,7 +44,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         self.btnPicture.clicked.connect(self.__on_click_picture)
 
         # start recording by default
-        self.__on_click_recording()
+        self.open_camera()
 
     def __on_click_recording(self):
         """
@@ -51,22 +52,31 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         """
         QtWidgets.QApplication.processEvents()
 
-        if not self.camera_manager.is_camera_open():
-            self.camera_manager.open_camera(self, self.update_frame, fps=5)
+        self.open_camera()
 
         # start/stop video analysis
-        if self.is_video_processing:
+        if self.is_processing_enabled:
             self.btnLive.setText("Start recording")
-            self.is_video_processing = False
+            self.is_processing_enabled = False
         else:
             self.btnLive.setText("Stop recording")
-            self.is_video_processing = True
+            self.is_processing_enabled = True
 
     def __on_click_picture(self):
         """
         Opens file picker + loads image into imageview
         """
         QtWidgets.QApplication.processEvents()
+
+        path = self.open_filename_dialog()
+        image = cv2.imread(path)
+
+        if image is not None:
+            self.is_processing_enabled = True
+            self.close_camera()
+            self.update_frame(image)
+        else:
+            print("Could not load image")
 
     def update_frame(self, frame):
 
@@ -84,7 +94,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         height, width, bpc = image.shape
         bpl = bpc * width
 
-        if self.is_video_processing:
+        if self.is_processing_enabled:
             finder = self.finder
             finder.load_image(image)
             image, cropped, metadata = finder.draw_external_contours(verbose=True, crop=True)
@@ -93,15 +103,11 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         img = QImage(image.data, width, height, bpl, QImage.Format_RGB888)
         self.widgetCamera.setImage(img)
 
-
-
     def show_cropped_images(self, cropped, columns=5):
         self.clearLayout(self.gridLayout_2)
 
         if cropped is None or not cropped:
             return
-
-        # self.finder.dump(cropped)
 
         images_size = len(cropped)
         rows = round((images_size / (columns * 1.0)))
@@ -121,13 +127,27 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
                 except AttributeError:
                     continue
 
-                print("width: {}, height: {}".format(width, height))
+                # print("width: {}, height: {}".format(width, height))
                 img = QImage(image.data, width, height, width, QImage.Format_Grayscale8)
                 label = QLabel(self)
                 pixmap = QPixmap.fromImage(img)
                 pixmap = pixmap.scaled(self.scaled_crop_image, self.scaled_crop_image, QtCore.Qt.KeepAspectRatio)
                 label.setPixmap(pixmap)
                 self.gridLayout_2.addWidget(label, i, j)
+
+    def open_camera(self):
+        if not self.camera_manager.is_camera_open():
+            self.camera_manager.open_camera(self, self.update_frame, fps=self.video_fps)
+
+    def close_camera(self):
+        self.camera_manager.close_camera()
+
+    def open_filename_dialog(self):
+        options = QFileDialog.Options()
+        # fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","Image (*.png)", options=options)
+        fileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
+                                                  "Image (*.png *.jpg *.jpeg)", options=options)
+        return fileName
 
     def clearLayout(self, layout):
         while layout.count():
