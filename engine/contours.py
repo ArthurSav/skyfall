@@ -113,7 +113,7 @@ class ContourFinder:
 
         return filtered_contours, filtered_hierarchy
 
-    def find_training_elements_contours(self, min_contour_dimen=50, max_contour_percentage = 75):
+    def find_training_elements_contours(self, min_contour_dimen=50, max_contour_percentage=75):
         """
         Contour detection optimized for finding external elements.
         Element separation happens at a parent level only
@@ -287,6 +287,26 @@ class ContourFinder:
             return a2 * 100 / a1
 
         return 0
+
+    def dump(self, images, path='data'):
+        if images is None:
+            print("Nothing to save")
+
+        extension = self.EXTENSION
+
+        # create dirs, if needed
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        # get existing images in class folder, if any
+        current_images = [file for file in os.listdir(path) if file.endswith(extension)]
+        current_images_num = len(current_images)
+
+        # save
+        for idx, image in enumerate(images):
+            dir_filename = "{}/{}{}".format(path, idx + current_images_num,
+                                               extension)  # data/toolbar/toolbar_01.png
+            cv2.imwrite(dir_filename, image)
 
     def save_images(self, images=None, class_name=None, override_existing=False, verbose=False, destination='data'):
 
