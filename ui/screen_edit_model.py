@@ -5,16 +5,18 @@ import os
 import cv2
 from PyQt5 import QtWidgets, QtCore, uic
 from PyQt5.QtGui import QImage, QPixmap
-from PyQt5.QtWidgets import QMainWindow, QLabel, QFileDialog, QMessageBox, QInputDialog, QLineEdit, QDialog, \
-    QPushButton, QVBoxLayout
+from PyQt5.QtWidgets import QMainWindow, QLabel, QFileDialog, QDialog
 
 from engine.contours import ContourFinder
 from ui.widgets import ImageWidget
 from utils.utils_camera import CameraManager
 
 # load ui file
+from utils.utils_ui import LayoutUtils
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
 screen_edit_model_ui = uic.loadUiType(dir_path + '/screen_edit_model.ui')[0]
+dialog_add_model_ui = uic.loadUiType(dir_path + "/dialog_add_component.ui")[0]
 
 
 class ScreenEditModel(QMainWindow, screen_edit_model_ui):
@@ -39,13 +41,12 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         # self.window_height = 1500
         self.window_width = self.widgetCamera.frameSize().width()
         self.window_height = self.widgetCamera.frameSize().height()
-        # print("Height:{}, Width:{}".format(self.widgetCamera.frameSize().height(), self.widgetCamera.frameSize().width()))
         self.widgetCamera = ImageWidget(self.widgetCamera)
 
         self.btnLive.clicked.connect(self.__on_click_recording)
         self.btnPicture.clicked.connect(self.__on_click_picture)
 
-        self.btnComponentAdd.clicked.connect(self.showdialog)
+        self.btnComponentAdd.clicked.connect(self.show_dialog_add_component)
 
         # start recording by default
         self.open_camera()
@@ -82,9 +83,11 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         else:
             print("Could not load image")
 
-    def showdialog(self):
-        form = Form()
+    def show_dialog_add_component(self):
+        QtWidgets.QApplication.processEvents()
+        form = DialogAddComponent()
         form.show()
+        form.exec_()
 
     def update_frame(self, frame):
 
@@ -112,7 +115,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         self.widgetCamera.setImage(img)
 
     def show_cropped_images(self, cropped, columns=5):
-        self.clearLayout(self.gridLayout_2)
+        LayoutUtils.remove_children(self.gridLayout_2)
 
         if cropped is None or not cropped:
             return
@@ -161,38 +164,17 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
 
     def open_filename_dialog(self):
         options = QFileDialog.Options()
-        # fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","Image (*.png)", options=options)
         fileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
                                                   "Image (*.png *.jpg *.jpeg)", options=options)
         return fileName
 
-    def clearLayout(self, layout):
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget() is not None:
-                child.widget().deleteLater()
-            elif child.layout() is not None:
-                self.clearLayout(child.layout())
+
 
     def closeEvent(self, event):
         self.camera_manager.close_camera()
 
-class Form(QDialog):
 
+class DialogAddComponent(QDialog, dialog_add_model_ui):
     def __init__(self, parent=None):
-        super(Form, self).__init__(parent)
-        # Create widgets
-        self.edit = QLineEdit("Write my name here")
-        self.button = QPushButton("Show Greetings")
-        # Create layout and add widgets
-        layout = QVBoxLayout()
-        layout.addWidget(self.edit)
-        layout.addWidget(self.button)
-        # Set dialog layout
-        self.setLayout(layout)
-        # Add button signal to greetings slot
-        self.button.clicked.connect(self.greetings)
-
-    # Greets the user
-    def greetings(self):
-        print ("Hello %s" % self.edit.text())
+        super(DialogAddComponent, self).__init__(parent)
+        self.setupUi(self)
