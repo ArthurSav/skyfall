@@ -5,7 +5,8 @@ import os
 import cv2
 from PyQt5 import QtWidgets, QtCore, uic
 from PyQt5.QtGui import QImage, QPixmap
-from PyQt5.QtWidgets import QMainWindow, QLabel, QFileDialog
+from PyQt5.QtWidgets import QMainWindow, QLabel, QFileDialog, QMessageBox, QInputDialog, QLineEdit, QDialog, \
+    QPushButton, QVBoxLayout
 
 from engine.contours import ContourFinder
 from ui.widgets import ImageWidget
@@ -32,16 +33,19 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
 
+        self.setup_categories()
+
         # self.window_width = 940
         # self.window_height = 1500
         self.window_width = self.widgetCamera.frameSize().width()
         self.window_height = self.widgetCamera.frameSize().height()
-        print(self.widgetCamera.frameSize())
         # print("Height:{}, Width:{}".format(self.widgetCamera.frameSize().height(), self.widgetCamera.frameSize().width()))
         self.widgetCamera = ImageWidget(self.widgetCamera)
 
         self.btnLive.clicked.connect(self.__on_click_recording)
         self.btnPicture.clicked.connect(self.__on_click_picture)
+
+        self.btnComponentAdd.clicked.connect(self.showdialog)
 
         # start recording by default
         self.open_camera()
@@ -77,6 +81,10 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
             self.update_frame(image)
         else:
             print("Could not load image")
+
+    def showdialog(self):
+        form = Form()
+        form.show()
 
     def update_frame(self, frame):
 
@@ -135,6 +143,15 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
                 label.setPixmap(pixmap)
                 self.gridLayout_2.addWidget(label, i, j)
 
+    def setup_categories(self):
+        self.listWidget.show()
+
+        ls = []
+        for i in range(100):
+            ls.append("row {}".format(i))
+
+        self.listWidget.addItems(ls)
+
     def open_camera(self):
         if not self.camera_manager.is_camera_open():
             self.camera_manager.open_camera(self, self.update_frame, fps=self.video_fps)
@@ -159,3 +176,23 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
 
     def closeEvent(self, event):
         self.camera_manager.close_camera()
+
+class Form(QDialog):
+
+    def __init__(self, parent=None):
+        super(Form, self).__init__(parent)
+        # Create widgets
+        self.edit = QLineEdit("Write my name here")
+        self.button = QPushButton("Show Greetings")
+        # Create layout and add widgets
+        layout = QVBoxLayout()
+        layout.addWidget(self.edit)
+        layout.addWidget(self.button)
+        # Set dialog layout
+        self.setLayout(layout)
+        # Add button signal to greetings slot
+        self.button.clicked.connect(self.greetings)
+
+    # Greets the user
+    def greetings(self):
+        print ("Hello %s" % self.edit.text())
