@@ -30,6 +30,8 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
     scale_displayed_cropped_image = 150
     video_fps = 5
 
+    cropped_images = None
+
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
@@ -83,9 +85,9 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
             print("Could not load image")
 
     def show_dialog_add_component(self):
-        QtWidgets.QApplication.processEvents()
         form = DialogAddComponent()
         form.show()
+        form.show_images(self.cropped_images)
         form.exec_()
 
     def update_frame(self, frame):
@@ -108,11 +110,12 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
             finder = self.finder
             finder.load_image(image)
             image, cropped, metadata = finder.draw_external_contours(verbose=True, crop=True)
+            self.cropped_images = cropped
 
             LayoutUtils.add_images_to_gridlayout(self, self.gridLayout_2, cropped,
                                                  columns=5,
                                                  scale_width=self.scale_displayed_cropped_image,
-                                                 scale_height=self.scale_displayed_cropped_image, replace=True)
+                                                 scale_height=self.scale_displayed_cropped_image)
 
         img = QImage(image.data, width, height, bpl, QImage.Format_RGB888)
         self.widgetCamera.setImage(img)
@@ -144,10 +147,14 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
 
 
 class DialogAddComponent(QDialog, dialog_add_model_ui):
+
+    component_size = 100
+
     def __init__(self, parent=None):
         super(DialogAddComponent, self).__init__(parent)
         self.setupUi(self)
 
     def show_images(self, images):
-        LayoutUtils.remove_children(self.gridLayout_2)
-        pass
+        LayoutUtils.add_images_to_gridlayout(self, self.gridLayout, images, scale_height= self.component_size, scale_width=self.component_size, replace=False)
+        # QtWidgets.QApplication.processEvents()
+
