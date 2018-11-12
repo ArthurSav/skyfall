@@ -51,6 +51,8 @@ class LayoutUtils:
 
                 try:
                     height, width = image.shape
+                    if height < 10 or width < 10:
+                        print("WTF")
                 except AttributeError:
                     continue
 
@@ -65,4 +67,4 @@ class LayoutUtils:
 
                 label.setPixmap(pixmap)
 
-                gridlayout.addWidget(label, i, j)
+                gridlayout.addWidget(label, i, j, QtCore.Qt.AlignTop)
