@@ -3,14 +3,13 @@
 import os
 
 import cv2
-from PyQt5 import QtWidgets, QtCore, uic
-from PyQt5.QtGui import QImage, QPixmap
-from PyQt5.QtWidgets import QMainWindow, QLabel, QFileDialog, QDialog
+from PyQt5 import QtWidgets, uic
+from PyQt5.QtGui import QImage
+from PyQt5.QtWidgets import QMainWindow, QFileDialog, QDialog
 
 from engine.contours import ContourFinder
 from ui.widgets import ImageWidget
 from utils.utils_camera import CameraManager
-
 # load ui file
 from utils.utils_ui import LayoutUtils
 
@@ -28,7 +27,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
     finder = ContourFinder()
 
     is_processing_enabled = False
-    scaled_crop_image = 150
+    scale_displayed_cropped_image = 150
     video_fps = 5
 
     def __init__(self, parent=None):
@@ -109,42 +108,14 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
             finder = self.finder
             finder.load_image(image)
             image, cropped, metadata = finder.draw_external_contours(verbose=True, crop=True)
-            self.show_cropped_images(cropped)
+
+            LayoutUtils.add_images_to_gridlayout(self, self.gridLayout_2, cropped,
+                                                 columns=5,
+                                                 scale_width=self.scale_displayed_cropped_image,
+                                                 scale_height=self.scale_displayed_cropped_image, replace=True)
 
         img = QImage(image.data, width, height, bpl, QImage.Format_RGB888)
         self.widgetCamera.setImage(img)
-
-    def show_cropped_images(self, cropped, columns=5):
-        LayoutUtils.remove_children(self.gridLayout_2)
-
-        if cropped is None or not cropped:
-            return
-
-        images_size = len(cropped)
-        rows = round((images_size / (columns * 1.0)))
-
-        counter_total = 0
-        for i in range(rows):
-            for j in range(columns):
-
-                if counter_total >= images_size:
-                    break
-
-                image = cropped[counter_total]
-                counter_total += 1
-
-                try:
-                    height, width = image.shape
-                except AttributeError:
-                    continue
-
-                # print("width: {}, height: {}".format(width, height))
-                img = QImage(image.data, width, height, width, QImage.Format_Grayscale8)
-                label = QLabel(self)
-                pixmap = QPixmap.fromImage(img)
-                pixmap = pixmap.scaled(self.scaled_crop_image, self.scaled_crop_image, QtCore.Qt.KeepAspectRatio)
-                label.setPixmap(pixmap)
-                self.gridLayout_2.addWidget(label, i, j)
 
     def setup_categories(self):
         self.listWidget.show()
@@ -168,8 +139,6 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
                                                   "Image (*.png *.jpg *.jpeg)", options=options)
         return fileName
 
-
-
     def closeEvent(self, event):
         self.camera_manager.close_camera()
 
@@ -178,3 +147,7 @@ class DialogAddComponent(QDialog, dialog_add_model_ui):
     def __init__(self, parent=None):
         super(DialogAddComponent, self).__init__(parent)
         self.setupUi(self)
+
+    def show_images(self, images):
+        LayoutUtils.remove_children(self.gridLayout_2)
+        pass
