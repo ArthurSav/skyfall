@@ -10,8 +10,8 @@ from PyQt5.QtWidgets import QMainWindow, QFileDialog, QDialog
 from engine.contours import ContourFinder
 from ui.widgets import ImageWidget, ImageGridLayout
 from utils.utils_camera import CameraManager
+
 # load ui file
-from utils.utils_ui import LayoutUtils
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 screen_edit_model_ui = uic.loadUiType(dir_path + '/screen_edit_model.ui')[0]
@@ -45,7 +45,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         self.window_width = self.widgetCamera.frameSize().width()
         self.window_height = self.widgetCamera.frameSize().height()
         self.widgetCamera = ImageWidget(self.widgetCamera)
-        self.gridLayout_2 = ImageGridLayout(self.gridLayout_2)
+        self.gridLayout_2 = ImageGridLayout(self.gridLayout_2, columns=5)
 
         self.btnLive.clicked.connect(self.__on_click_recording)
         self.btnPicture.clicked.connect(self.__on_click_picture)
@@ -148,13 +148,16 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
 
 
 class DialogAddComponent(QDialog, dialog_add_model_ui):
-    component_size = 100
+    # displayed image dimension
+    scale_dimen = 100
 
     def __init__(self, parent=None):
         super(DialogAddComponent, self).__init__(parent)
         self.setupUi(self)
 
+        self.gridLayout = ImageGridLayout(self.gridLayout, columns=5)
+
     def show_images(self, images):
-        LayoutUtils.add_images_to_gridlayout(self, self.gridLayout, images, scale_height=self.component_size,
-                                             scale_width=self.component_size, replace=False)
+        self.gridLayout.add_images(images, scale_width=self.scale_dimen, scale_height=self.scale_dimen, replace=True,
+                                   is_checkable=True, is_preselected=True)
         # QtWidgets.QApplication.processEvents()
