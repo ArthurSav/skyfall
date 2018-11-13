@@ -24,10 +24,18 @@ class ImageWidget(QWidget):
         qp.end()
 
 
-class ImageGridLayout(QGridLayout):
-    def __init__(self, parent = None):
-        QGridLayout.__i
-        super(self).__init__(parent)
+class ImageGridLayout:
+
+    """
+    Makes it easy to add images to a gridlayout
+    p.s couldn't extend the actual gridlayout so we just use a reference of it
+    """
+
+    gridLayout = None
+
+    def __init__(self, parent = None, columns = 4):
+        self.gridLayout = parent
+        self.columns = columns
 
     def add_images(self, images, scale_width=None, scale_height=None, replace=False, is_checkable=False, is_preselected = True):
 
@@ -57,7 +65,7 @@ class ImageGridLayout(QGridLayout):
 
                 # print("width: {}, height: {}".format(width, height))
                 img = QImage(image.data, width, height, width, QImage.Format_Grayscale8)
-                label = QLabel(self)
+                label = QLabel()
                 pixmap = QPixmap.fromImage(img)
 
                 # rescale image
@@ -73,11 +81,11 @@ class ImageGridLayout(QGridLayout):
                 else:
                     gridWidget = label
 
-                self.addWidget(gridWidget, i, j, QtCore.Qt.AlignTop)
+                self.gridLayout.addWidget(gridWidget, i, j, QtCore.Qt.AlignTop)
 
     def remove_children(self):
-        while self.count():
-            child = self.takeAt(0)
+        while self.gridLayout.count():
+            child = self.gridLayout.takeAt(0)
             if child.widget() is not None:
                 child.widget().deleteLater()
             elif child.layout() is not None:
