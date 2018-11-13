@@ -154,8 +154,15 @@ class DialogAddComponent(QDialog, dialog_add_model_ui):
     def __init__(self, parent=None):
         super(DialogAddComponent, self).__init__(parent)
         self.setupUi(self)
+        self.setWindowTitle("Add component")
+
+        self.buttonBox.accepted.connect(self.save)
+        self.buttonBox.rejected.connect(self.reject)
 
         self.gridLayout = ImageGridLayout(self.gridLayout, columns=5)
+
+    def save(self):
+        pass
 
     def show_images(self, images):
         self.gridLayout.add_images(images, scale_width=self.scale_dimen, scale_height=self.scale_dimen, replace=True,
