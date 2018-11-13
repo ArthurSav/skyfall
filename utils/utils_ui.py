@@ -1,11 +1,11 @@
 from PyQt5.QtGui import QImage, QPixmap
-from PyQt5.QtWidgets import QLabel
+from PyQt5.QtWidgets import QLabel, QWidget, QVBoxLayout, QCheckBox, QRadioButton
 from PyQt5 import QtCore
 
 
 class LayoutUtils:
     @staticmethod
-    def remove_children(self, layout):
+    def remove_children(layout):
         """
         Removes children from parent layout
         :param layout Qwidget
@@ -15,7 +15,7 @@ class LayoutUtils:
             if child.widget() is not None:
                 child.widget().deleteLater()
             elif child.layout() is not None:
-                self.clear_layout(child.layout())
+                LayoutUtils.remove_children(child.layout())
 
     @staticmethod
     def add_images_to_gridlayout(self, gridlayout, images, columns=4, scale_width=None, scale_height=None,
@@ -32,7 +32,7 @@ class LayoutUtils:
         """
 
         if replace:
-            LayoutUtils.remove_children(self, gridlayout)
+            LayoutUtils.remove_children(gridlayout)
 
         if images is None or not images:
             return
@@ -51,8 +51,6 @@ class LayoutUtils:
 
                 try:
                     height, width = image.shape
-                    if height < 10 or width < 10:
-                        print("WTF")
                 except AttributeError:
                     continue
 
@@ -67,4 +65,18 @@ class LayoutUtils:
 
                 label.setPixmap(pixmap)
 
-                gridlayout.addWidget(label, i, j, QtCore.Qt.AlignTop)
+                w = Widget3()
+                w.add(label)
+                w.add(QCheckBox())
+
+                gridlayout.addWidget(w, i, j, QtCore.Qt.AlignTop)
+
+
+class Widget3(QWidget):
+    def __init__(self, parent=None):
+        QWidget.__init__(self, parent=parent)
+        self.lay = QVBoxLayout(self)
+
+    def add(self, widget):
+        self.lay.addWidget(widget)
+
