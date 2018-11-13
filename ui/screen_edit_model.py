@@ -160,4 +160,3 @@ class DialogAddComponent(QDialog, dialog_add_model_ui):
     def show_images(self, images):
         self.gridLayout.add_images(images, scale_width=self.scale_dimen, scale_height=self.scale_dimen, replace=True,
                                    is_checkable=True, is_preselected=True)
-        # QtWidgets.QApplication.processEvents()
