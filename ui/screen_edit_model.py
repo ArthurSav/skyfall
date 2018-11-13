@@ -8,7 +8,7 @@ from PyQt5.QtGui import QImage
 from PyQt5.QtWidgets import QMainWindow, QFileDialog, QDialog
 
 from engine.contours import ContourFinder
-from ui.widgets import ImageWidget
+from ui.widgets import ImageWidget, ImageGridLayout
 from utils.utils_camera import CameraManager
 # load ui file
 from utils.utils_ui import LayoutUtils
@@ -27,7 +27,9 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
     finder = ContourFinder()
 
     is_processing_enabled = False
-    scale_displayed_cropped_image = 150
+
+    # cropped images displayed size
+    scale_dimen = 150
     video_fps = 5
 
     cropped_images = None
@@ -43,6 +45,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         self.window_width = self.widgetCamera.frameSize().width()
         self.window_height = self.widgetCamera.frameSize().height()
         self.widgetCamera = ImageWidget(self.widgetCamera)
+        self.gridLayout_2 = ImageGridLayout(self.gridLayout_2)
 
         self.btnLive.clicked.connect(self.__on_click_recording)
         self.btnPicture.clicked.connect(self.__on_click_picture)
@@ -112,10 +115,8 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
             image, cropped, metadata = finder.draw_external_contours(verbose=True, crop=True)
             self.cropped_images = cropped
 
-            LayoutUtils.add_images_to_gridlayout(self, self.gridLayout_2, cropped,
-                                                 columns=5,
-                                                 scale_width=self.scale_displayed_cropped_image,
-                                                 scale_height=self.scale_displayed_cropped_image)
+            self.gridLayout_2.add_images(cropped, scale_width=self.scale_dimen, scale_height=self.scale_dimen,
+                                         replace=True, is_checkable=False)
 
         img = QImage(image.data, width, height, bpl, QImage.Format_RGB888)
         self.widgetCamera.setImage(img)
@@ -147,7 +148,6 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
 
 
 class DialogAddComponent(QDialog, dialog_add_model_ui):
-
     component_size = 100
 
     def __init__(self, parent=None):
@@ -155,6 +155,6 @@ class DialogAddComponent(QDialog, dialog_add_model_ui):
         self.setupUi(self)
 
     def show_images(self, images):
-        LayoutUtils.add_images_to_gridlayout(self, self.gridLayout, images, scale_height= self.component_size, scale_width=self.component_size, replace=False)
+        LayoutUtils.add_images_to_gridlayout(self, self.gridLayout, images, scale_height=self.component_size,
+                                             scale_width=self.component_size, replace=False)
         # QtWidgets.QApplication.processEvents()
-
