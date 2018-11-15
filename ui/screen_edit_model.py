@@ -8,6 +8,7 @@ from PyQt5.QtGui import QImage
 from PyQt5.QtWidgets import QMainWindow, QFileDialog, QDialog
 
 from engine.contours import ContourFinder
+from engine.data_training import TrainingModelCreator
 from ui.widgets import ImageWidget, ImageGridLayout
 from utils.utils_camera import CameraManager
 
@@ -33,6 +34,8 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
     video_fps = 5
 
     cropped_images = None
+
+    creator = TrainingModelCreator('data')
 
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
@@ -87,8 +90,11 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         else:
             print("Could not load image")
 
+    def save_component_images(self, name, images):
+        self.creator.save_component(name, images, replace=True, verbose=True)
+
     def show_dialog_add_component(self):
-        form = DialogAddComponent()
+        form = DialogAddComponent(self.save_component_images)
         form.show()
         form.show_images(self.cropped_images)
         form.exec_()
@@ -148,22 +154,44 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
 
 
 class DialogAddComponent(QDialog, dialog_add_model_ui):
+
     # displayed image dimension
     scale_dimen = 100
+    displayed_images = None
 
-    def __init__(self, parent=None):
+    def __init__(self, callback_save, parent=None):
         super(DialogAddComponent, self).__init__(parent)
         self.setupUi(self)
         self.setWindowTitle("Add component")
 
-        self.buttonBox.accepted.connect(self.save)
+        self.buttonBox.accepted.connect(lambda: self.save(callback_save))
         self.buttonBox.rejected.connect(self.reject)
 
         self.gridLayout = ImageGridLayout(self.gridLayout, columns=5)
 
-    def save(self):
-        pass
+    def save(self, callback_save):
+
+        name = self.lineEditName.text()
+        images = self.displayed_images
+
+        if self.displayed_images is None:
+            error_dialog = QtWidgets.QErrorMessage()
+            error_dialog.showMessage('No images to save')
+            error_dialog.show()
+            error_dialog.exec_()
+            return
+        if not name:
+            error_dialog = QtWidgets.QErrorMessage()
+            error_dialog.showMessage('Please set a component name')
+            error_dialog.show()
+            error_dialog.exec_()
+            return
+
+        callback_save(name, images)
+        self.close()
+
 
     def show_images(self, images):
+        self.displayed_images = images
         self.gridLayout.add_images(images, scale_width=self.scale_dimen, scale_height=self.scale_dimen, replace=True,
                                    is_checkable=True, is_preselected=True)
