@@ -2,7 +2,7 @@
 
 from PyQt5 import QtCore
 from PyQt5.QtGui import QPainter, QImage, QPixmap
-from PyQt5.QtWidgets import QWidget, QGridLayout, QVBoxLayout, QCheckBox, QLabel
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QCheckBox, QLabel
 
 
 class ImageWidget(QWidget):
@@ -25,7 +25,6 @@ class ImageWidget(QWidget):
 
 
 class ImageGridLayout:
-
     """
     Makes it easy to add images to a gridlayout
     p.s couldn't extend the actual gridlayout so we just use a reference of it
@@ -33,11 +32,12 @@ class ImageGridLayout:
 
     gridLayout = None
 
-    def __init__(self, parent = None, columns = 4):
+    def __init__(self, parent=None, columns=4):
         self.gridLayout = parent
         self.columns = columns
 
-    def add_images(self, images, scale_width=None, scale_height=None, replace=False, is_checkable=False, is_preselected = True):
+    def add_images(self, images, scale_width=None, scale_height=None, replace=False, is_checkable=False,
+                   is_preselected=True):
 
         if replace:
             self.remove_children()
