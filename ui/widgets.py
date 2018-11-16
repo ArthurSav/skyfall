@@ -31,6 +31,7 @@ class ImageGridLayout:
     """
 
     gridLayout = None
+    __is_checkable = False
 
     def __init__(self, parent=None, columns=4):
         self.gridLayout = parent
@@ -38,6 +39,19 @@ class ImageGridLayout:
 
     def add_images(self, images, scale_width=None, scale_height=None, replace=False, is_checkable=False,
                    is_preselected=True):
+        """
+        Adds a list of images in the grid
+
+        :param images: list of numpy images
+        :param scale_width: displayed width, if any
+        :param scale_height: displayed, height, if any
+        :param replace: if true, it will remove previous images
+        :param is_checkable: if true, images will show a checkbox
+        :param is_preselected: if true, checkbox images will be preselected
+        :return:
+        """
+
+        self.__is_checkable = is_checkable
 
         if replace:
             self.remove_children()
@@ -83,7 +97,29 @@ class ImageGridLayout:
 
                 self.gridLayout.addWidget(gridWidget, i, j, QtCore.Qt.AlignTop)
 
+    def is_checkable(self):
+        return self.is_checkable
+
+    def get_selected(self):
+        """
+        :return: A list of checkbox selected positions
+        """
+
+        selected = []
+        for position in range(self.gridLayout.count()):
+            item = self.gridLayout.itemAt(position)
+            if type(item.widget()) is CheckedImage:
+                checkedImage = item.widget()
+                if checkedImage.is_checked():
+                    selected.append(position)
+
+        return selected
+
     def remove_children(self):
+        """
+        Removes all grid children
+        """
+
         while self.gridLayout.count():
             child = self.gridLayout.takeAt(0)
             if child.widget() is not None:
