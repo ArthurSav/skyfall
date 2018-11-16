@@ -121,8 +121,11 @@ class TrainingModelCreator:
         components = []
         path = self.get_model_path()
         for component in os.listdir(path):
-            if os.path.isdir(os.path.join(path, component)) and "." not in component:
-                components.append(component)
+            component_path = os.path.join(path, component)
+            if os.path.isdir(component_path) and "." not in component:
+                images, size = self.__get_path_images(component_path)
+                c = {"name": component, "size": size}
+                components.append(c)
         return components
 
     def __get_path_images(self, path):
