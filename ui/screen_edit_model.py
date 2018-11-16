@@ -41,7 +41,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
 
-        self.setup_categories()
+        self.invalidate_displayed_components()
 
         # self.window_width = 940
         # self.window_height = 1500
@@ -54,6 +54,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         self.btnPicture.clicked.connect(self.__on_click_picture)
 
         self.btnComponentAdd.clicked.connect(self.show_dialog_add_component)
+        self.btnComponentRemove.clicked.connect(self.remove_selected_component)
 
         # start recording by default
         self.open_camera()
@@ -62,6 +63,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         """
         Opens camera and displays video
         """
+
         QtWidgets.QApplication.processEvents()
 
         self.open_camera()
@@ -78,6 +80,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         """
         Opens file picker + loads image into imageview
         """
+
         QtWidgets.QApplication.processEvents()
 
         path = self.open_filename_dialog()
@@ -92,6 +95,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
 
     def save_component_images(self, name, images):
         self.creator.save_component(name, images, replace=True, verbose=True)
+        self.invalidate_displayed_components()
 
     def show_dialog_add_component(self):
         form = DialogAddComponent(self.save_component_images)
@@ -100,6 +104,10 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         form.exec_()
 
     def update_frame(self, frame):
+        """
+        Use it to display either a video feed or just a regular image
+        :param frame: image to be displayed
+        """
 
         img_height, img_width, img_colors = frame.shape
         scale_w = float(self.window_width) / float(img_width)
@@ -127,14 +135,32 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         img = QImage(image.data, width, height, bpl, QImage.Format_RGB888)
         self.widgetCamera.setImage(img)
 
-    def setup_categories(self):
-        self.listWidget.show()
+    def invalidate_displayed_components(self):
+        """
+        Refreshes displayed component list
+        :return:
+        """
 
+        self.listWidget.show()
+        self.listWidget.clear()
+        components = self.creator.list_model_components()
+        print(components)
         ls = []
-        for i in range(100):
-            ls.append("row {}".format(i))
+        for component in components:
+            ls.append(component)
 
         self.listWidget.addItems(ls)
+
+    def remove_selected_component(self):
+        """
+        Removes currently selected component
+        """
+
+        component_name = self.listWidget.currentItem().text()
+        is_removed = self.creator.remove_component(component_name)
+        if is_removed:
+            print("Removed component: {}".format(component_name))
+        self.invalidate_displayed_components()
 
     def open_camera(self):
         if not self.camera_manager.is_camera_open():
@@ -152,8 +178,10 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
     def closeEvent(self, event):
         self.camera_manager.close_camera()
 
-
 class DialogAddComponent(QDialog, dialog_add_model_ui):
+    """
+    A dialog to add currently cropped images into the component list
+    """
 
     # displayed image dimension
     scale_dimen = 100
@@ -170,9 +198,19 @@ class DialogAddComponent(QDialog, dialog_add_model_ui):
         self.gridLayout = ImageGridLayout(self.gridLayout, columns=5)
 
     def save(self, callback_save):
+        """
+        Saves displayed images
+        :param callback_save: actual function that stores images
+        :return:
+        """
 
         name = self.lineEditName.text()
         images = self.displayed_images
+
+        if self.gridLayout.is_checkable():
+            selected_positions = self.gridLayout.get_selected()
+            images = [image for i, image in enumerate(images) if
+                               any(i == selected for selected in selected_positions)]
 
         if self.displayed_images is None:
             error_dialog = QtWidgets.QErrorMessage()
@@ -192,6 +230,10 @@ class DialogAddComponent(QDialog, dialog_add_model_ui):
 
 
     def show_images(self, images):
+        """
+        Shoes images into dialog grid
+        :param images: a list of numpy images
+        """
         self.displayed_images = images
         self.gridLayout.add_images(images, scale_width=self.scale_dimen, scale_height=self.scale_dimen, replace=True,
                                    is_checkable=True, is_preselected=True)
