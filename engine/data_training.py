@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import cv2
 
@@ -15,11 +16,9 @@ class TrainingModelCreator:
         self.set_model_name_or_default(model_name)
 
     def save_component(self, name, images, replace=True, verbose=False):
-
         if not name:
             print("Provided component name is not valid")
             return
-
         if images is None:
             print("No images provided")
             return
@@ -27,7 +26,7 @@ class TrainingModelCreator:
         removed = 0
         added = 0
 
-        path = self.__create_folder_if_needed(self.__get_model_path(), name)
+        path = self.__create_folder_if_needed(self.get_model_path(), name)
         current_images, current_images_size = self.__get_path_images(path)
 
         # remove previous
@@ -48,6 +47,14 @@ class TrainingModelCreator:
 
         if verbose:
             print("deleted: {}, added: {}, total: {} ({})".format(removed, added, current_images_size, path))
+
+    def remove_component(self, name):
+        path = self.get_model_path()
+        component_path = os.path.join(path, name)
+        if os.path.exists(component_path):
+            shutil.rmtree(component_path)
+            return True
+        return False
 
     def set_model_name_or_default(self, name=None):
         if not name:
@@ -80,8 +87,16 @@ class TrainingModelCreator:
 
         return folders, prefixed_folders
 
-    def __get_model_path(self):
+    def get_model_path(self):
         return os.path.join(self.path, self.model_name)
+
+    def list_model_components(self):
+        components = []
+        path = self.get_model_path()
+        for component in os.listdir(path):
+            if os.path.isdir(os.path.join(path, component)) and "." not in component:
+                components.append(component)
+        return components
 
     def __get_path_images(self, path):
         images = [os.path.join(path, file) for file in os.listdir(path) if
