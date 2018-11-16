@@ -138,7 +138,6 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
     def invalidate_displayed_components(self):
         """
         Refreshes displayed component list
-        :return:
         """
 
         self.listWidget.show()
@@ -147,7 +146,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         print(components)
         ls = []
         for component in components:
-            ls.append(component)
+            ls.append("{} ({})".format(component['name'], component['size']))
 
         self.listWidget.addItems(ls)
 
@@ -201,7 +200,6 @@ class DialogAddComponent(QDialog, dialog_add_model_ui):
         """
         Saves displayed images
         :param callback_save: actual function that stores images
-        :return:
         """
 
         name = self.lineEditName.text()
@@ -228,10 +226,9 @@ class DialogAddComponent(QDialog, dialog_add_model_ui):
         callback_save(name, images)
         self.close()
 
-
     def show_images(self, images):
         """
-        Shoes images into dialog grid
+        Shows images into dialog grid
         :param images: a list of numpy images
         """
         self.displayed_images = images
