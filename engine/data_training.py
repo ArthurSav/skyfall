@@ -16,6 +16,17 @@ class TrainingModelCreator:
         self.set_model_name_or_default(model_name)
 
     def save_component(self, name, images, replace=True, verbose=False):
+
+        """
+        Save component images in a folder named after the component.
+
+        :param name: component/folder name
+        :param images: component images
+        :param replace: if true, it will replace images from an existing folder
+        :param verbose: prints debug details
+        :return:
+        """
+
         if not name:
             print("Provided component name is not valid")
             return
@@ -49,6 +60,11 @@ class TrainingModelCreator:
             print("deleted: {}, added: {}, total: {} ({})".format(removed, added, current_images_size, path))
 
     def remove_component(self, name):
+        """
+        Deletes component folder and it's content
+        :param name: component name
+        """
+
         path = self.get_model_path()
         component_path = os.path.join(path, name)
         if os.path.exists(component_path):
@@ -57,6 +73,11 @@ class TrainingModelCreator:
         return False
 
     def set_model_name_or_default(self, name=None):
+        """
+        Creates component folder. If no name is provided and one is generated
+        :param name: component folder name
+        :return:
+        """
         if not name:
             folders, prefixed = self.__list_model_folders()
             self.model_name = "{}{}".format(self.model_prefix, len(prefixed))
@@ -76,6 +97,9 @@ class TrainingModelCreator:
         return folder
 
     def __list_model_folders(self):
+        """
+        :return: a list of folders located in project root
+        """
         folders = []
         prefixed_folders = []
         root = self.path
@@ -91,6 +115,9 @@ class TrainingModelCreator:
         return os.path.join(self.path, self.model_name)
 
     def list_model_components(self):
+        """
+        :return: a list of folders located in model dir
+        """
         components = []
         path = self.get_model_path()
         for component in os.listdir(path):
@@ -99,6 +126,10 @@ class TrainingModelCreator:
         return components
 
     def __get_path_images(self, path):
+        """
+        :param path: i.e /users/hello/project
+        :return: a list of image paths located in provided path
+        """
         images = [os.path.join(path, file) for file in os.listdir(path) if
                   any(file.endswith(ext) for ext in self.exts)]
         size = len(images)
