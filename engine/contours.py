@@ -3,7 +3,6 @@ import os
 import cv2
 
 from models.model_p1 import MetadataContour
-from models.model_utils import CropType
 
 
 class ContourFinder:
@@ -252,5 +251,5 @@ class ContourFinder:
         # save
         for idx, image in enumerate(images):
             dir_filename = "{}/{}{}".format(path, idx + current_images_num,
-                                               extension)  # data/toolbar/toolbar_01.png
+                                            extension)  # data/toolbar/toolbar_01.png
             cv2.imwrite(dir_filename, image)
