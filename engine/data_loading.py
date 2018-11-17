@@ -3,7 +3,7 @@ from glob import glob
 
 import cv2
 import numpy as np
-from skyfall.utils import utils_image
+from utils import utils_image
 from tensorflow import keras
 
 
