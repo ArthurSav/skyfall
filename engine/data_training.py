@@ -4,7 +4,7 @@ import shutil
 import cv2
 
 
-class TrainingModelCreator:
+class ModelCreator:
     path = None
     model_name = None
     model_prefix = "model_"

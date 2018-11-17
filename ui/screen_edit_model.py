@@ -8,7 +8,7 @@ from PyQt5.QtGui import QImage
 from PyQt5.QtWidgets import QMainWindow, QFileDialog, QDialog
 
 from engine.contours import ContourFinder
-from engine.data_training import TrainingModelCreator
+from engine.data_training import ModelCreator
 from ui.widgets import ImageWidget, ImageGridLayout
 from utils.utils_camera import CameraManager
 
@@ -35,7 +35,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
 
     cropped_images = None
 
-    creator = TrainingModelCreator('data')
+    creator = ModelCreator('data')
 
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
