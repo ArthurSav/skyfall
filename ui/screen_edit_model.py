@@ -154,8 +154,11 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         """
         Removes currently selected component
         """
+        selected_item = self.listWidget.currentItem()
+        if selected_item is None:
+            return
 
-        component_name = self.listWidget.currentItem().text()
+        component_name = selected_item.text()
         is_removed = self.creator.remove_component(component_name)
         if is_removed:
             print("Removed component: {}".format(component_name))
