@@ -302,7 +302,7 @@
       </attribute>
      </widget>
     </widget>
-    <widget class="QPushButton" name="pushButton">
+    <widget class="QPushButton" name="btnSave">
      <property name="geometry">
       <rect>
        <x>20</x>
