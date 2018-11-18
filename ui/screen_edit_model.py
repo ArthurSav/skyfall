@@ -8,7 +8,7 @@ from PyQt5.QtGui import QImage
 from PyQt5.QtWidgets import QMainWindow, QFileDialog, QDialog
 
 from engine.contours import ContourFinder
-from engine.data_training import ModelCreator
+from engine.training import ModelCreator, DataLoader
 from ui.widgets import ImageWidget, ImageGridLayout
 from utils.utils_camera import CameraManager
 
@@ -37,6 +37,8 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
 
     creator = ModelCreator('data')
 
+    loader = DataLoader()
+
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
@@ -55,6 +57,8 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
 
         self.btnComponentAdd.clicked.connect(self.show_dialog_add_component)
         self.btnComponentRemove.clicked.connect(self.remove_selected_component)
+
+        self.btnSave.clicked.connect(self.train_model)
 
         # start recording by default
         self.open_camera()
@@ -143,10 +147,9 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         self.listWidget.show()
         self.listWidget.clear()
         components = self.creator.list_model_components()
-        print(components)
         ls = []
         for component in components:
-            ls.append("{} ({})".format(component['name'], component['size']))
+            ls.append("{} ({})".format(component['name'], len(component['images'])))
 
         self.listWidget.addItems(ls)
 
@@ -177,8 +180,20 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
                                                   "Image (*.png *.jpg *.jpeg)", options=options)
         return fileName
 
+    def train_model(self):
+
+        name = self.lineEdit.text()
+
+        if not name:
+            print("Please provide a valid model name")
+            return
+
+        self.creator.train(name)
+
+
     def closeEvent(self, event):
         self.camera_manager.close_camera()
+
 
 class DialogAddComponent(QDialog, dialog_add_model_ui):
     """
@@ -211,7 +226,7 @@ class DialogAddComponent(QDialog, dialog_add_model_ui):
         if self.gridLayout.is_checkable():
             selected_positions = self.gridLayout.get_selected()
             images = [image for i, image in enumerate(images) if
-                               any(i == selected for selected in selected_positions)]
+                      any(i == selected for selected in selected_positions)]
 
         if self.displayed_images is None:
             error_dialog = QtWidgets.QErrorMessage()
