@@ -53,7 +53,7 @@ def convert_to_square(image, size, retain_aspect_ratio=False):
     return cv2.resize(mask, (size, size), interpolation=cv2.INTER_AREA)
 
 
-def show_image_list(images=None, columns=10, size=None, display=DisplaySize.SMALL):
+def plot_image_list(images=None, columns=10, size=None, display=DisplaySize.SMALL):
     """
     Displays all images in a list
     

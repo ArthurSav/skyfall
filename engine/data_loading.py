@@ -4,7 +4,7 @@ from glob import glob
 import cv2
 import numpy as np
 from utils import utils_image
-from tensorflow import keras
+from keras import utils
 
 
 class Loader:
@@ -83,7 +83,7 @@ class Loader:
         if normalize:
             x_train, y_train, x_test, y_test = self.__normalize(x_train, y_train, x_test, y_test, number_of_classes)
 
-        print("Exporting size: {}x{}".format(size, size))
+        print("Exported size: {}x{}".format(size, size))
         print("x_train: {}, x_test: {}".format(len(x_train), len(x_test)))
 
         return names, (x_train, y_train), (x_test, y_test)
@@ -132,7 +132,7 @@ class Loader:
         if normalize:
             images = self.__normalize_single(images)
 
-        print('Exporting size: {}x{}'.format(size, size))
+        print('Exported size: {}x{}'.format(size, size))
         return images
 
     def __load_paths_as_array(self, paths, size):
@@ -198,8 +198,8 @@ class Loader:
         x_test = (x_test - np.min(x_test)) / np.ptp(x_test)
 
         # normalize labels to binary class matrix
-        y_train = keras.utils.to_categorical(y_train, number_of_classes)
-        y_test = keras.utils.to_categorical(y_test, number_of_classes)
+        y_train = utils.to_categorical(y_train, number_of_classes)
+        y_test = utils.to_categorical(y_test, number_of_classes)
 
         return x_train, y_train, x_test, y_test
 

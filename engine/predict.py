@@ -1,14 +1,15 @@
-from keras.models import load_model
-from skyfall.utils import utils_image
-from skyfall.models.model_p1 import MetadataContour, MetadataPrediction
 import numpy as np
+from keras.models import load_model
+
+from models.model_p1 import MetadataPrediction
+from utils import utils_image
+
 
 class Predict:
-
     model = None
     class_names = None
 
-    def __init__(self, class_names, model = None, model_path = None):
+    def __init__(self, class_names, model=None, model_path=None):
         """
         model: pre-trained model
         model_path: load pre-trained model from path
@@ -25,12 +26,12 @@ class Predict:
         if self.model is None:
             print("Nothing to load")
             return
-            
+
         if self.class_names is None:
             print("No class names provided")
             return
-    
-    def predict(self, images, metadata = None, show_predictions = False):
+
+    def predict(self, images, metadata=None, show_predictions=False):
         """
         images: numpy array of images to predict (images should be normalized and resized)
         metadata: contour information for provided images [width, height, x, y]
@@ -51,9 +52,8 @@ class Predict:
 
                 metadata_predictions.append(metadata_prediction)
 
-
         # plot images and show their scores
         if show_predictions:
-            utils_image.show_prediction_list(images = images, predictions = predictions, class_names = self.class_names)
+            utils_image.plot_prediction_list(images=images, predictions=predictions, class_names=self.class_names)
 
         return metadata_predictions
