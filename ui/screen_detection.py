@@ -28,6 +28,9 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
 
     creator = ModelCreator('data')
 
+    STATE_AUTOMATIC = 0
+    STATE_MANUAL = 1
+
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
@@ -36,13 +39,17 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         self.window_height = self.widgetCamera.frameSize().height()
         self.widgetCamera = ImageWidget(self.widgetCamera)
         self.gridLayout_2 = ImageGridLayout(self.gridLayout_2, columns=5)
-        self.__setup_loader()
 
-        self.btnGenerate.clicked.connect(self.show_loader)
+        self.radioAutomatic.toggled.connect(lambda: self.__set_code_generation_state(self.STATE_AUTOMATIC))
+        self.radioManual.toggled.connect(lambda: self.__set_code_generation_state(self.STATE_MANUAL))
+
+        # self.btnGenerate.clicked.connect(self.set_loading_state)
         self.btnLive.clicked.connect(self.__on_click_recording)
         self.btnPicture.clicked.connect(self.__on_click_picture)
 
+        self.__setup_code_generation_progress_loader()
         self.invalidate_displayed_models()
+        self.__set_code_generation_state(self.STATE_AUTOMATIC)
 
         # start recording by default
         self.open_camera()
@@ -82,9 +89,10 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         img = QImage(image.data, width, height, bpl, QImage.Format_RGB888)
         self.widgetCamera.setImage(img)
 
-    def __setup_loader(self):
+    def __setup_code_generation_progress_loader(self):
         widget_movie = QMovie("assets/loader.gif")
         widget_movie.setScaledSize(QSize(64, 64))
+
         self.widget_progress = widget_movie
         self.label.setMovie(widget_movie)
         self.label.show()
@@ -92,25 +100,20 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         widget_movie.start()
         widget_movie.stop()
 
-    def show_loader(self):
-        if self.widget_progress.state() == self.widget_progress.Running:
-            self.widget_progress.stop()
-        else:
+    def set_loading_state(self, is_loading):
+        if is_loading:
             self.widget_progress.start()
+        else:
+            self.widget_progress.stop()
 
+    def is_loading(self):
+        """
+        :return: true if progress widget is running
+        """
+        return self.widget_progress.state() == self.widget_progress.Running
 
     def on_cropped_images_updated(self, images, metadata):
         pass
-
-    def invalidate_displayed_models(self):
-        self.listWidget.show()
-        self.listWidget.clear()
-
-        folders, prefixed = self.creator.list_model_folders()
-
-        # folder names
-        names = [os.path.splitext(os.path.basename(name))[0] for name in folders]
-        self.listWidget.addItems(names)
 
     def __on_click_recording(self):
         """
@@ -158,6 +161,22 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
 
     def close_camera(self):
         self.camera_manager.close_camera()
+
+    def invalidate_displayed_models(self):
+        self.listWidget.show()
+        self.listWidget.clear()
+
+        folders, prefixed = self.creator.list_model_folders()
+
+        # folder names
+        names = [os.path.splitext(os.path.basename(name))[0] for name in folders]
+        self.listWidget.addItems(names)
+
+    def __set_code_generation_state(self, state):
+        if state == self.STATE_AUTOMATIC:
+            self.btnGenerate.setEnabled(False)
+        elif state == self.STATE_MANUAL:
+            self.btnGenerate.setEnabled(True)
 
     def closeEvent(self, event):
         self.camera_manager.close_camera()

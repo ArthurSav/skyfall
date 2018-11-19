@@ -298,7 +298,7 @@
        <x>0</x>
        <y>0</y>
        <width>321</width>
-       <height>201</height>
+       <height>141</height>
       </rect>
      </property>
      <property name="styleSheet">
@@ -312,17 +312,20 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_4">
       <item>
-       <widget class="QRadioButton" name="radioButton">
+       <widget class="QRadioButton" name="radioAutomatic">
         <property name="styleSheet">
          <string notr="true"/>
         </property>
         <property name="text">
          <string>Automatic</string>
         </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
        </widget>
       </item>
       <item>
-       <widget class="QRadioButton" name="radioButton_2">
+       <widget class="QRadioButton" name="radioManual">
         <property name="text">
          <string>Manual</string>
         </property>
@@ -341,7 +344,7 @@
      <property name="geometry">
       <rect>
        <x>0</x>
-       <y>300</y>
+       <y>190</y>
        <width>111</width>
        <height>20</height>
       </rect>
@@ -354,7 +357,7 @@
      <property name="geometry">
       <rect>
        <x>210</x>
-       <y>300</y>
+       <y>190</y>
        <width>111</width>
        <height>20</height>
       </rect>
@@ -367,7 +370,7 @@
      <property name="geometry">
       <rect>
        <x>110</x>
-       <y>260</y>
+       <y>150</y>
        <width>100</width>
        <height>100</height>
       </rect>
@@ -382,12 +385,6 @@
       <set>Qt::AlignCenter</set>
      </property>
     </widget>
-    <zorder>groupBox</zorder>
-    <zorder>widgetCamera</zorder>
-    <zorder>groupBox</zorder>
-    <zorder>line</zorder>
-    <zorder>line_2</zorder>
-    <zorder>label</zorder>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
