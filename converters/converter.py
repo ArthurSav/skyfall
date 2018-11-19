@@ -1,9 +1,9 @@
-from skyfall.models.model_utils import ConverterType
 import xml.etree.ElementTree as et
 
+from models.model_utils import ConverterType
 
-class Converter():
 
+class Converter:
     LABELS = ['toolbar', 'toolbar_search', 'fab', 'list_item', 'image', 'checkbox']
 
     def __init__(self):
@@ -18,7 +18,7 @@ class Converter():
         if metadata == None:
             print('Nothing to do. No metadata provided.')
             return
-        
+
         if converter_type == None or converter_type == ConverterType.NONE:
             print("Nothing to convert")
             return
@@ -28,7 +28,7 @@ class Converter():
     ####################################################################
     # REACT NATIVE                                                     #
     ####################################################################
-    
+
     def __convert_from_mobile_screen_to_react_native(self, metadata):
         """
         Converts basic cropping and score metadata into react native code
@@ -38,7 +38,6 @@ class Converter():
 
         for component in metadata:
             pass
-        
 
     def __sort_by_xy(self, lst):
         return lst
@@ -64,15 +63,14 @@ class Converter():
         elif name == self.LABELS[5]:
             pass
 
-class ReactConverter():
 
+class ReactConverter():
     FILE = 'react.xml'
     generated_code = None
 
     file_data = None
 
-    def __init__(self, file = None):
-
+    def __init__(self, file=None):
         if file is None:
             file = self.FILE;
 
@@ -88,5 +86,4 @@ class ReactConverter():
         """
         Loads components into target file
         """
-        pass    
-
+        pass

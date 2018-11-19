@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import QMainWindow, QFileDialog, QDialog
 
 from engine.contours import ContourFinder
 from engine.training import ModelCreator, DataLoader
+from models.model_utils import ContourType
 from ui.widgets import ImageWidget, ImageGridLayout
 from utils.utils_camera import CameraManager
 
@@ -130,7 +131,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         if self.is_processing_enabled:
             finder = self.finder
             finder.load_image(image)
-            image, cropped, metadata = finder.draw_external_contours(verbose=True, crop=True)
+            image, cropped, metadata = finder.draw_and_crop_contours(ContourType.TRAINING, verbose=True, crop=True)
             self.cropped_images = cropped
 
             self.gridLayout_2.add_images(cropped, scale_width=self.scale_dimen, scale_height=self.scale_dimen,

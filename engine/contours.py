@@ -3,10 +3,10 @@ import os
 import cv2
 
 from models.model_p1 import MetadataContour
+from models.model_utils import ContourType
 
 
 class ContourFinder:
-    EXTENSION = '.png'
     class_name = None
     image = None
     cropped = None
@@ -39,8 +39,8 @@ class ContourFinder:
 
         self.image = image
 
-    def find_mobile_screen_contours(self, min_contour_dimen=50, max_contour_percentage=75, min_layer=1, max_layer=3,
-                                    verbose=False):
+    def __find_mobile_screen_contours(self, min_contour_dimen=50, max_contour_percentage=75, min_layer=1, max_layer=3,
+                                      verbose=False):
         """
         Contour detection optimized for findidng mobile screen elements
 
@@ -112,7 +112,7 @@ class ContourFinder:
 
         return filtered_contours, filtered_hierarchy
 
-    def find_training_elements_contours(self, min_contour_dimen=50, max_contour_percentage=75):
+    def __find_training_elements_contours(self, min_contour_dimen=50, max_contour_percentage=75):
         """
         Contour detection optimized for finding external elements.
         Element separation happens at a parent level only
@@ -174,12 +174,27 @@ class ContourFinder:
 
         return contours, hierarchy
 
-    def draw_external_contours(self, crop=False, crop_padding=10, verbose=False):
+    def draw_and_crop_contours(self, contour_type, crop=False, crop_padding=10, verbose=False):
+        """
+        Draw and crop contours in an image.
+        :param contour_type: contour finder type
+        :param crop: if false, it will not crop contours
+        :param crop_padding: added contour padding
+        :param verbose:
+        :return: image_with_contours, cropped, metadata
+        """
         image = self.image
         image_with_contours = image.copy()
 
         try:
-            contours, hierarchy = self.find_training_elements_contours(max_contour_percentage=50)
+            if contour_type == ContourType.TRAINING:
+                contours, hierarchy = self.__find_training_elements_contours(max_contour_percentage=50)
+            elif contour_type == ContourType.MOBILE:
+                contours, hierarchy = self.__find_mobile_screen_contours()
+            else:
+                print("Contour type not set.")
+                return
+
         except TypeError:
             contours, hierarchy = [], []
 
@@ -221,7 +236,8 @@ class ContourFinder:
 
         return image_with_contours
 
-    def __calculate_percentage_area(self, w1, h1, w2, h2):
+    @staticmethod
+    def __calculate_percentage_area(w1, h1, w2, h2):
         """
         Compares 2 surface areas
         return the percentage of area2 compared to area1 (i.e area 2 is 80% of area 1)
@@ -234,11 +250,12 @@ class ContourFinder:
 
         return 0
 
-    def dump(self, images, path='data'):
+    @staticmethod
+    def dump(images, path='data'):
         if images is None:
             print("Nothing to save")
 
-        extension = self.EXTENSION
+        extension = ".png"
 
         # create dirs, if needed
         if not os.path.exists(path):

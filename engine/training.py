@@ -315,7 +315,6 @@ class ModelCreator:
         self.__set_model_folder_name_or_default(model_name)
 
     def train(self, name=None):
-
         path = self.get_model_path()
         names, (x_train, y_train), (x_test, y_test) = self.loader.load_training_data(path)
 
@@ -392,14 +391,14 @@ class ModelCreator:
         :param name: component folder name
         """
         if not name:
-            folders, prefixed = self.__list_model_folders()
+            folders, prefixed = self.list_model_folders()
             self.model_name = "{}{}".format(self.model_prefix, len(prefixed))
         else:
             self.model_name = name
 
         create_folder_if_needed(self.path, self.model_name)
 
-    def __list_model_folders(self):
+    def list_model_folders(self):
         """
         :return: a list of folders located in project root
         """

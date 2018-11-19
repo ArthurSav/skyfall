@@ -149,6 +149,7 @@ class ReactConverter():
             raise ValueError('A project template is required')
         if components is None or not components:
             print('No components where found')
+            return
 
         print('Loading xml data from "{}"'.format(xml_template_filepath))
         print('Project file to modify: {}'.format(path))
