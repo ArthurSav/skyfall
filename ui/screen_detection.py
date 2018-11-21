@@ -8,7 +8,7 @@ from PyQt5.QtGui import QImage, QMovie
 from PyQt5.QtWidgets import QMainWindow, QFileDialog
 
 from engine.contours import ContourFinder
-from engine.training import ModelCreator
+from engine.model_manager import ModelCreator
 from models.model_utils import ContourType
 from ui.widgets import ImageWidget, ImageGridLayout
 from utils.utils_camera import CameraManager
@@ -90,6 +90,7 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         self.widgetCamera.setImage(img)
 
     def __setup_code_generation_progress_loader(self):
+
         widget_movie = QMovie("assets/loader.gif")
         widget_movie.setScaledSize(QSize(64, 64))
 
@@ -106,14 +107,14 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         else:
             self.widget_progress.stop()
 
-    def is_loading(self):
+    def __is_codegen_loading(self):
         """
         :return: true if progress widget is running
         """
         return self.widget_progress.state() == self.widget_progress.Running
 
     def on_cropped_images_updated(self, images, metadata):
-        pass
+        print("New cropped images: {}".format(len(images)))
 
     def __on_click_recording(self):
         """

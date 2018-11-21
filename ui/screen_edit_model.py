@@ -8,7 +8,7 @@ from PyQt5.QtGui import QImage
 from PyQt5.QtWidgets import QMainWindow, QFileDialog, QDialog
 
 from engine.contours import ContourFinder
-from engine.training import ModelCreator, DataLoader
+from engine.model_manager import ModelCreator, DataLoader
 from models.model_utils import ContourType
 from ui.widgets import ImageWidget, ImageGridLayout
 from utils.utils_camera import CameraManager
