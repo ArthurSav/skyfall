@@ -3,11 +3,11 @@ import shutil
 
 import cv2
 import numpy as np
-
 from keras import utils
-from utils import utils_image, utils_train
 from keras.layers import Conv2D, Dense, Flatten, MaxPooling2D
 from keras.models import Sequential
+
+from utils import utils_image, utils_train
 
 
 def list_images(path, extensions=['.png', '.jpg', '.jpeg']):
@@ -115,34 +115,85 @@ class DataLoader:
         x_test = x_test.reshape(x_test.shape[0], size, size, 1).astype('float32')
 
         if normalize:
-            x_train, y_train, x_test, y_test = self.__normalize(x_train, y_train, x_test, y_test, number_of_classes)
+            x_train, y_train, x_test, y_test = self.__normalize_batch(x_train, y_train, x_test, y_test, number_of_classes)
 
         print("Exported size: {}x{}".format(size, size))
         print("x_train: {}, x_test: {}".format(len(x_train), len(x_test)))
 
         return names, (x_train, y_train), (x_test, y_test)
 
-    def __load_paths_as_array(self, paths, size):
-        """
-        Convert a list of image paths into a numpy array of resized images
+    def load_evaluation_data(self, path=None, images=None, size=64, normalize=True):
 
-        paths: a list of image paths i.e /train/images/hello.jpg ...
-        size: image size to resize to
+        #TODO - make sure images are grayscale or they are converted to grayscale
+        #TODO - also if you want to invert images, do it here
 
-        return a numpy array of loaded square images of shape i.e (num, size, size, 1)
-        """
+        if path is not None:
+            images, num = list_images(path)
+            images = self.__load_paths_as_array(images, size)
+        elif images is not None and isinstance(images, (list,)):
+            images = self.__load_list_as_array(images, size)
+        else:
+            raise ValueError('You must provide either a path or images to load')
 
-        x = np.empty([0, size, size])
+        if images is None:
+            raise ValueError('Could not load images')
 
-        for path in paths:
-            image = self.__load_square_image(path, size)
-            image = np.invert(image)
-            x = np.concatenate((x, image.reshape(1, size, size)))
+        print("Loaded {} images for evaluation...".format(len(images)))
 
-        return x
+        images = images.reshape(images.shape[0], size, size, 1).astype('float32')
+
+        if normalize:
+            images = self.__normalize(images)
+
+        print('Exported size: {}x{}'.format(size, size))
+        return images
 
     @staticmethod
-    def __normalize(x_train, y_train, x_test, y_test, number_of_classes):
+    def __load_paths_as_array(paths, size, grayscale=True, invert=True):
+        """
+        :param paths: list of image paths to load
+        :param size: image size (i.e 64x64)
+        :param grayscale: if true, images will be converted to grayscale
+        :param invert: if true, it will invert the colors.
+         We use it to convert black images into white images since they seem to perform better when training/eval
+        :return: numpy array of squared+grayscaled images
+        """
+        converted = np.empty([0, size, size])
+        for path in paths:
+            image = cv2.imread(path)
+            if image is None:
+                print("Could not convert load image")
+                continue
+            if grayscale:
+                cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            image = utils_image.convert_to_square(image, size)
+            if invert:
+                image = np.invert(image)
+            converted = np.concatenate((converted, image.reshape(1, size, size)))
+        return converted
+
+    @staticmethod
+    def __load_list_as_array(images, size, grayscale=True, invert=True):
+        """
+        :param images: images to convert
+        :param size: image size (i.e 64x64)
+        :param grayscale: if true, images will be converted to grayscale
+        :param invert: if true, it will invert the colors.
+         We use it to convert black images into white images since they seem to perform better when training/eval
+        :return: numpy array of squared+grayscaled images
+        """
+        converted = np.empty([0, size, size])
+        for image in images:
+            if grayscale:
+                cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            image = utils_image.convert_to_square(image, size)
+            if invert:
+                image = np.invert(image)
+            converted = np.concatenate((converted, image.reshape(1, size, size)))
+        return converted
+
+    @staticmethod
+    def __normalize_batch(x_train, y_train, x_test, y_test, number_of_classes):
         """
         Normalize images to a range of [0, 1] and image labels to binary matrixes
         """
@@ -177,14 +228,23 @@ class DataLoader:
 
         return x, y
 
+    def __convert_to_grayscale(self, images):
+        pass
+        # cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
     @staticmethod
-    def __load_square_image(path, size):
+    def __load_square_image(size, path=None, image=None):
         """
         Load image from path, resize to square (maintains aspect ratio)
         """
-        image = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-        image = utils_image.convert_to_square(image, size)
-        return image
+
+        if path is not None:
+            image = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+
+        if image is None:
+            raise Exception("You must provide either a path or an image")
+
+        return utils_image.convert_to_square(image, size)
 
     @staticmethod
     def __split(images, class_id, split=0.2):
@@ -204,9 +264,29 @@ class DataLoader:
 
         return train, train_labels, test, test_labels
 
+    @staticmethod
+    def __normalize(images):
+        if images.dtype != 'float32':
+            images = images.astype('float32')
+        images = (images - np.min(images)) / np.ptp(images)
+        return images
+
+
+class ModelEval:
+
+    model = None
+
+    loader = DataLoader()
+
+    def eval(self, images):
+        if self.model is None:
+            raise Exception("Missing model")
+
+
+
+
 
 class ModelTrain:
-
     model = None
     model_name = "model.h5"
 
@@ -223,8 +303,7 @@ class ModelTrain:
 
         return model
 
-    def evaluate(self, x_test, y_test, model=None):
-
+    def eval(self, x_test, y_test, model=None):
         if model is None and self.model is not None:
             model = self.model
         elif model is None:
@@ -237,7 +316,6 @@ class ModelTrain:
         return accuracy
 
     def save(self, name=None, path=None, model=None):
-
         if model is None and self.model is not None:
             model = self.model
         elif model is None:
@@ -319,7 +397,7 @@ class ModelCreator:
         names, (x_train, y_train), (x_test, y_test) = self.loader.load_training_data(path)
 
         self.trainer.train(x_train, y_train)
-        self.trainer.evaluate(x_test, y_test)
+        self.trainer.eval(x_test, y_test)
         self.trainer.save(name=name, path=path)
 
     def save_component(self, name, images, replace=True, verbose=False):
@@ -412,5 +490,3 @@ class ModelCreator:
                 folders.append(os.path.join(root, item))
 
         return folders, prefixed_folders
-
-
