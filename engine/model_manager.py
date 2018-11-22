@@ -130,9 +130,6 @@ class DataLoader:
         else:
             raise ValueError('You must provide either a path or images to load')
 
-        if images is None:
-            raise ValueError('Could not load images')
-
         print("Loaded {} images for evaluation...".format(len(images)))
 
         images = images.reshape(images.shape[0], size, size, 1).astype('float32')
@@ -435,27 +432,30 @@ class ModelCreator:
         self.trainer.save(name=name, path=path)
 
     def predict(self, images, metadata):
+        results = []
+        if images:
+            self.__check_model_exists()
 
-        self.__check_model_exists()
+            # preprocess images
+            images = self.loader.load_evaluation_data(images=images)
 
-        # preprocess images
-        images = self.loader.load_evaluation_data(images=images)
+            model = self.model
 
-        model = self.model
+            # todo - consider saving component names into a var instead of fethcing them everying time
 
-        # use folder names (components) as label names
-        components = self.list_model_components()
-        names = []
-        for component in components:
-            names.append(component['name'])
+            # use folder names (components) as label names
+            components = self.list_model_components()
+            names = []
+            for component in components:
+                names.append(component['name'])
 
-        # load model info
-        self.predictor.load_model(model, names)
+            # load model info
+            self.predictor.load_model(model, names)
 
-        # predict labels
-        results = self.predictor.predict(images, metadata)
+            # predict labels
+            results = self.predictor.predict(images, metadata)
 
-        print("Predicted results...")
+        print("Predicted results... {}".format(len(results)))
         for result in results:
             print("Label: {}, score: {}".format(result['label'], result['score']))
 
