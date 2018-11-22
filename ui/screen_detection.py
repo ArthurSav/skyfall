@@ -31,6 +31,8 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
     STATE_AUTOMATIC = 0
     STATE_MANUAL = 1
 
+    state_current = STATE_AUTOMATIC
+
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
@@ -74,6 +76,9 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
             scale = 1
 
         if self.is_processing_enabled:
+
+            self.__set_loading_indicator_state(self.code_gen_state == self.STATE_AUTOMATIC)
+
             finder = self.finder
             finder.load_image(frame)
 
@@ -85,6 +90,7 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
                                          replace=True, is_checkable=False)
             self.on_cropped_images_updated(cropped, metadata)
         else:
+            self.__set_loading_indicator_state(False)
             image = cv2.resize(frame, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
@@ -106,13 +112,14 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         widget_movie.start()
         widget_movie.stop()
 
-    def set_loading_state(self, is_loading):
-        if is_loading:
+    def __set_loading_indicator_state(self, is_loading):
+        if is_loading and not self.__is_loading_indicator_active():
             self.widget_progress.start()
-        else:
+
+        elif not is_loading and self.__is_loading_indicator_active():
             self.widget_progress.stop()
 
-    def __is_codegen_loading(self):
+    def __is_loading_indicator_active(self):
         """
         :return: true if progress widget is running
         """
@@ -186,6 +193,8 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         self.listWidget.addItems(names)
 
     def __set_code_generation_state(self, state):
+        self.code_gen_state = state
+
         if state == self.STATE_AUTOMATIC:
             self.btnGenerate.setEnabled(False)
         elif state == self.STATE_MANUAL:

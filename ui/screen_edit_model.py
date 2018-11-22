@@ -198,7 +198,6 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
 
         self.creator.train(name)
 
-
     def closeEvent(self, event):
         self.camera_manager.close_camera()
 
