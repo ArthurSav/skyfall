@@ -3,6 +3,7 @@
 from PyQt5 import QtWidgets
 
 from ui.screen_detection import ScreenDetection
+from ui.screen_edit_model import ScreenEditModel
 
 if __name__ == "__main__":
     import sys
