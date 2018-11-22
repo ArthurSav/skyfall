@@ -47,9 +47,14 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         self.btnLive.clicked.connect(self.__on_click_recording)
         self.btnPicture.clicked.connect(self.__on_click_picture)
 
+        self.listWidget.itemSelectionChanged.connect(self.on_list_item_select)
+
         self.__setup_code_generation_progress_loader()
         self.invalidate_displayed_models()
         self.__set_code_generation_state(self.STATE_AUTOMATIC)
+
+        # preselect first model
+        self.listWidget.setCurrentRow(0)
 
         # start recording by default
         self.open_camera()
@@ -114,7 +119,7 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         return self.widget_progress.state() == self.widget_progress.Running
 
     def on_cropped_images_updated(self, images, metadata):
-        print("New cropped images: {}".format(len(images)))
+        self.creator.predict(images, metadata)
 
     def __on_click_recording(self):
         """
@@ -162,6 +167,13 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
 
     def close_camera(self):
         self.camera_manager.close_camera()
+
+    def on_list_item_select(self):
+        selected_item = self.listWidget.currentItem()
+        if selected_item is None:
+            return
+        model_name = selected_item.text()
+        self.creator.load_model(model_name)
 
     def invalidate_displayed_models(self):
         self.listWidget.show()
