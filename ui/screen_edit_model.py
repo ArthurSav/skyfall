@@ -123,23 +123,29 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         if scale == 0:
             scale = 1
 
-        image = cv2.resize(frame, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        if self.is_processing_enabled:
+            finder = self.finder
+            finder.load_image(frame)
+
+            image, cropped, metadata = finder.draw_and_crop_contours(ContourType.TRAINING, verbose=True, crop=True)
+            image = cv2.resize(image, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+            self.gridLayout_2.add_images(cropped, scale_width=self.scale_dimen, scale_height=self.scale_dimen,
+                                         replace=True, is_checkable=False)
+            self.on_cropped_images_updated(cropped, metadata)
+        else:
+            image = cv2.resize(frame, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         height, width, bpc = image.shape
         bpl = bpc * width
 
-        if self.is_processing_enabled:
-            finder = self.finder
-            finder.load_image(image)
-            image, cropped, metadata = finder.draw_and_crop_contours(ContourType.TRAINING, verbose=True, crop=True)
-            self.cropped_images = cropped
-
-            self.gridLayout_2.add_images(cropped, scale_width=self.scale_dimen, scale_height=self.scale_dimen,
-                                         replace=True, is_checkable=False)
-
         img = QImage(image.data, width, height, bpl, QImage.Format_RGB888)
         self.widgetCamera.setImage(img)
+
+    def on_cropped_images_updated(self, images, metadata):
+        self.cropped_images = images
 
     def invalidate_displayed_components(self):
         """
