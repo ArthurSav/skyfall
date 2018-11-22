@@ -42,7 +42,6 @@ def create_folder_if_needed(path, name, verbose=False):
         os.makedirs(folder)
         if verbose:
             print("Created dir: {}".format(folder))
-
     return folder
 
 
@@ -103,8 +102,8 @@ class DataLoader:
         number_of_classes = len(names)
 
         # load images into numpy array
-        x_train = self.__load_paths_as_array(train_paths, size)
-        x_test = self.__load_paths_as_array(test_paths, size)
+        x_train = self.__load_paths_as_array(train_paths, size, invert=invert)
+        x_test = self.__load_paths_as_array(test_paths, size, invert=invert)
 
         # shuffle images to even out distribution during training
         x_train, y_train = self.__shuffle(x_train, y_train)
@@ -122,16 +121,12 @@ class DataLoader:
 
         return names, (x_train, y_train), (x_test, y_test)
 
-    def load_evaluation_data(self, path=None, images=None, size=64, normalize=True):
-
-        #TODO - make sure images are grayscale or they are converted to grayscale
-        #TODO - also if you want to invert images, do it here
-
+    def load_evaluation_data(self, path=None, images=None, invert=True, size=64, normalize=True):
         if path is not None:
             images, num = list_images(path)
-            images = self.__load_paths_as_array(images, size)
+            images = self.__load_paths_as_array(images, size, invert=invert)
         elif images is not None and isinstance(images, (list,)):
-            images = self.__load_list_as_array(images, size)
+            images = self.__load_list_as_array(images, size, invert=invert)
         else:
             raise ValueError('You must provide either a path or images to load')
 
@@ -165,7 +160,7 @@ class DataLoader:
                 print("Could not convert load image")
                 continue
             if grayscale:
-                cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             image = utils_image.convert_to_square(image, size)
             if invert:
                 image = np.invert(image)
@@ -185,7 +180,7 @@ class DataLoader:
         converted = np.empty([0, size, size])
         for image in images:
             if grayscale:
-                cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             image = utils_image.convert_to_square(image, size)
             if invert:
                 image = np.invert(image)
@@ -228,24 +223,6 @@ class DataLoader:
 
         return x, y
 
-    def __convert_to_grayscale(self, images):
-        pass
-        # cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-    @staticmethod
-    def __load_square_image(size, path=None, image=None):
-        """
-        Load image from path, resize to square (maintains aspect ratio)
-        """
-
-        if path is not None:
-            image = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-
-        if image is None:
-            raise Exception("You must provide either a path or an image")
-
-        return utils_image.convert_to_square(image, size)
-
     @staticmethod
     def __split(images, class_id, split=0.2):
         """
@@ -272,23 +249,62 @@ class DataLoader:
         return images
 
 
-class ModelEval:
+class ModelPredict:
 
     model = None
+    names = None
 
-    loader = DataLoader()
+    def load_model(self, model, names):
+        """
+        :param model: compiled & trained model
+        :param names: label names
+        """
+        self.model = model
+        self.names = names
 
-    def eval(self, images):
+        self.__check_missing_data()
+
+    def predict(self, images, metadata):
+        self.__check_missing_data()
+
+        model = self.model
+        names = self.names
+
+        results = []
+        predictions = model.predict(images)
+
+        for idx, prediction in enumerate(predictions):
+
+            # label with highest score
+            predicted_label = np.argmax(prediction)
+
+            # score of highest predicted label
+            score = prediction[predicted_label]
+
+            # predicted label name
+            predicted_label_name = names[predicted_label]
+
+            result = {'label': predicted_label_name,
+                      'label_id': predicted_label,
+                      'score': score}
+
+            if metadata is not None:
+                contours = metadata[idx]
+                result['contours'] = contours
+
+            results.append(result)
+
+    def __check_missing_data(self):
         if self.model is None:
-            raise Exception("Missing model")
-
-
-
+            raise Exception("Please provide a valid and compiled model")
+        if self.names is None:
+            raise Exception("Please provide valid label names")
 
 
 class ModelTrain:
     model = None
-    model_name = "model.h5"
+    model_name = None
+    model_extension = ".h5"
 
     def train(self, x_train, y_train, verbose=2, epochs=5, validation_split=0.1, batch_size=256):
 
@@ -315,22 +331,24 @@ class ModelTrain:
 
         return accuracy
 
-    def save(self, name=None, path=None, model=None):
+    def save(self, name, path=None, model=None):
+        """
+        :param name: model name
+        :param path: path where to save (default is current dir)
+        :param model: actual model
+        """
+
         if model is None and self.model is not None:
             model = self.model
         elif model is None:
-            print("Missing model, nothing to save")
-            return
+            raise Exception("Missing model, nothing to save")
 
-        if name is None and self.model_name is not None:
-            name = self.model_name
-        elif self.model_name is None:
-            print("Please provide a valid model name to save")
-            return
+        if name is None:
+            raise Exception("Please provide a valid model name to save")
 
         # add extension
-        if not name.endswith(".h5"):
-            name += ".h5"
+        if not name.endswith(self.model_extension):
+            name += self.model_extension
 
         if not path:
             path = name
@@ -384,27 +402,68 @@ class ModelCreator:
     model_prefix = "model_"
     exts = ['.png', '.jpg', '.jpeg']
     save_extension = ".png"
+    model_extension = ".h5"
+
+    model = None
+    model_path = None
 
     loader = DataLoader()
     trainer = ModelTrain()
+    predictor = ModelPredict()
 
-    def __init__(self, path, model_name=None):
+    def __init__(self, path):
+        """
+        Creates a new model directory
+        :param path: root directory where all models are located
+        """
+
+        if path is None:
+            raise Exception("Please provide a valid root path")
+
         self.path = os.path.abspath(path)
-        self.__set_model_folder_name_or_default(model_name)
 
     def train(self, name=None):
-        path = self.get_model_path()
+        path = self.get_model_dir_path()
+
+        # load & preprocess images
         names, (x_train, y_train), (x_test, y_test) = self.loader.load_training_data(path)
 
         self.trainer.train(x_train, y_train)
         self.trainer.eval(x_test, y_test)
         self.trainer.save(name=name, path=path)
 
-    def save_component(self, name, images, replace=True, verbose=False):
+    def predict(self, images, metadata):
 
+        # preprocess images
+        images = self.loader.load_evaluation_data(images=images)
+
+        # get loaded model, model name, model dir
+        # predict
+
+    def load_model(self, name):
+        """
+        :param name: model name (folder name and model filename must be the same)
+        """
+        self.model_name = name
+        path = self.get_model_dir_path()
+        filepath = os.path.join(path, "{}{}".format(name, self.model_extension))
+
+        # check if model file exists
+        # set model name
+        # load model from file
+
+
+    def create_model_dir(self, name=None):
+        if not name:
+            folders, prefixed = self.list_model_folders()
+            name = "{}{}".format(self.model_prefix, len(prefixed))
+
+        self.model_name = name
+        create_folder_if_needed(self.path, name)
+
+    def save_component(self, name, images, replace=True, verbose=False):
         """
         Save component images in a folder named after the component.
-
         :param name: component/folder name
         :param images: component images
         :param replace: if true, it will replace images from an existing folder
@@ -422,7 +481,7 @@ class ModelCreator:
         removed = 0
         added = 0
 
-        path = create_folder_if_needed(self.get_model_path(), name)
+        path = create_folder_if_needed(self.get_model_dir_path(), name)
         current_images, current_images_size = list_images(path)
 
         # remove previous
@@ -450,31 +509,20 @@ class ModelCreator:
         :param name: component name
         """
 
-        path = self.get_model_path()
+        path = self.get_model_dir_path()
         component_path = os.path.join(path, name)
         if os.path.exists(component_path):
             shutil.rmtree(component_path)
             return True
         return False
 
-    def get_model_path(self):
+    def get_model_dir_path(self):
+        if self.model_name is None:
+            raise Exception("Model name is missing")
         return os.path.join(self.path, self.model_name)
 
     def list_model_components(self):
-        return list_folders_with_images(self.get_model_path())
-
-    def __set_model_folder_name_or_default(self, name=None):
-        """
-        Creates component folder. If no name is provided and one is generated
-        :param name: component folder name
-        """
-        if not name:
-            folders, prefixed = self.list_model_folders()
-            self.model_name = "{}{}".format(self.model_prefix, len(prefixed))
-        else:
-            self.model_name = name
-
-        create_folder_if_needed(self.path, self.model_name)
+        return list_folders_with_images(self.get_model_dir_path())
 
     def list_model_folders(self):
         """
@@ -490,3 +538,4 @@ class ModelCreator:
                 folders.append(os.path.join(root, item))
 
         return folders, prefixed_folders
+
