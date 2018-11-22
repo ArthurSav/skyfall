@@ -44,6 +44,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
 
+        self.creator.create_model_dir()
         self.invalidate_displayed_components()
 
         # self.window_width = 940
