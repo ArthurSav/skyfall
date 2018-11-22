@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 from keras import utils
 from keras.layers import Conv2D, Dense, Flatten, MaxPooling2D
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 
 from utils import utils_image, utils_train
 
@@ -179,7 +179,7 @@ class DataLoader:
         """
         converted = np.empty([0, size, size])
         for image in images:
-            if grayscale:
+            if len(image.shape) == 3 and grayscale:
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             image = utils_image.convert_to_square(image, size)
             if invert:
@@ -293,6 +293,8 @@ class ModelPredict:
                 result['contours'] = contours
 
             results.append(result)
+
+        return results
 
     def __check_missing_data(self):
         if self.model is None:
@@ -434,24 +436,47 @@ class ModelCreator:
 
     def predict(self, images, metadata):
 
+        self.__check_model_exists()
+
         # preprocess images
         images = self.loader.load_evaluation_data(images=images)
 
-        # get loaded model, model name, model dir
-        # predict
+        model = self.model
+
+        # use folder names (components) as label names
+        components = self.list_model_components()
+        names = []
+        for component in components:
+            names.append(component['name'])
+
+        # load model info
+        self.predictor.load_model(model, names)
+
+        # predict labels
+        results = self.predictor.predict(images, metadata)
+
+        print("Predicted results...")
+        for result in results:
+            print("Label: {}, score: {}".format(result['label'], result['score']))
 
     def load_model(self, name):
         """
+        Loads model from model dir
         :param name: model name (folder name and model filename must be the same)
         """
         self.model_name = name
-        path = self.get_model_dir_path()
-        filepath = os.path.join(path, "{}{}".format(name, self.model_extension))
+        self.model_path = self.get_model_dir_path()
 
-        # check if model file exists
-        # set model name
-        # load model from file
+        # create mode filepath
+        filepath = os.path.join(self.model_path, "{}{}".format(name, self.model_extension))
 
+        if not os.path.isfile(filepath):
+            raise Exception("Model file '{}' not found".format(filepath))
+
+        self.model = load_model(filepath)
+        self.__check_model_exists()
+
+        print("Loaded model {}".format(filepath))
 
     def create_model_dir(self, name=None):
         if not name:
@@ -538,4 +563,15 @@ class ModelCreator:
                 folders.append(os.path.join(root, item))
 
         return folders, prefixed_folders
+
+    def get_model(self):
+        return self.model
+
+    def __check_model_exists(self):
+        if not self.model_name:
+            raise Exception("Model name is missing")
+        if self.model is None:
+            raise Exception("Mode file is missing")
+        if not self.model_path:
+            raise Exception("Model directory path is missing")
 
