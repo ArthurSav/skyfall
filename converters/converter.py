@@ -1,89 +1,71 @@
-import xml.etree.ElementTree as et
+import os
+from enum import Enum
 
-from models.model_utils import ConverterType
+from converters.converter_react import ReactConverter
+
+
+class ConverterType(Enum):
+    REACT = 1
 
 
 class Converter:
-    LABELS = ['toolbar', 'toolbar_search', 'fab', 'list_item', 'image', 'checkbox']
+    filepath_output = None
+
+    react = ReactConverter('converters/react.xml')
 
     def __init__(self):
         pass
 
-    def convert(self, converter_type, metadata):
-        """
-        type: ConverterType
-        metadata: each type requires it's own set of metadata to proccess
-        """
+    def set_ouput(self, filepath):
+        self.filepath_output = filepath
 
-        if metadata == None:
-            print('Nothing to do. No metadata provided.')
-            return
+    def convert(self, items):
+        self.__check()
 
-        if converter_type == None or converter_type == ConverterType.NONE:
+        if items is None or not items:
             print("Nothing to convert")
             return
-        elif converter_type == ConverterType.REACT:
-            self.__convert_from_mobile_screen_to_react_native(metadata)
 
-    ####################################################################
-    # REACT NATIVE                                                     #
-    ####################################################################
+        # use platform converter
+        code = self.__convert_react(items)
 
-    def __convert_from_mobile_screen_to_react_native(self, metadata):
-        """
-        Converts basic cropping and score metadata into react native code
-        """
+        # export code
+        self.__on_code_generated(code)
 
-        metadata = self.__sort_by_xy(metadata)
+    def __on_code_generated(self, code):
+        self.__inject_code_into_file(self.filepath_output, code)
 
-        for component in metadata:
-            pass
+    def __convert_react(self, items):
+        proccessed = []
+        for item in items:
+            contours = item['contours']
+            proccessed.append({'name': item['label'],
+                               'x': contours['x'],
+                               'y': contours['y'],
+                               'w': contours['w'],
+                               'h': contours['h']})
+        proccessed = sorted(proccessed, key=lambda e: e['y'])
 
-    def __sort_by_xy(self, lst):
-        return lst
+        return self.react.generate(proccessed, self.filepath_output)
 
-    def __create_component(self, name, x, y, w, h):
+    @staticmethod
+    def __inject_code_into_file(filepath, code):
 
-        # toolbar
-        if name == self.LABELS[0]:
-            pass
-        # toolbar search
-        elif name == self.LABELS[1]:
-            pass
-        # fab button
-        elif name == self.LABELS[2]:
-            pass
-        # list item
-        elif name == self.LABELS[3]:
-            pass
-        # image
-        elif name == self.LABELS[4]:
-            pass
-        # checkbox
-        elif name == self.LABELS[5]:
-            pass
+        # check a file with an extension is provided
+        fileinfo = os.path.splitext(os.path.basename(filepath))
+        if len(fileinfo) < 2:
+            print('Could not load code into {}'.format(filepath))
+            print('Please provide a valid file')
+            return
 
+        print('Injecting code into {}'.format(filepath))
 
-class ReactConverter():
-    FILE = 'react.xml'
-    generated_code = None
+        injectable_file = open(filepath, "w+")
+        injectable_file.write(code)
+        injectable_file.close()
 
-    file_data = None
+        print('File updated!')
 
-    def __init__(self, file=None):
-        if file is None:
-            file = self.FILE;
-
-        file_data = et.parse(file).getroot()
-
-    def __load_components(self, components):
-        """
-        components: a sorted list that contains [x, y, w, h, name] for each component
-        """
-        pass
-
-    def __update_file(self):
-        """
-        Loads components into target file
-        """
-        pass
+    def __check(self):
+        if self.filepath_output is None or not os.path.isfile(self.filepath_output):
+            raise Exception("Please provide a valid output file")

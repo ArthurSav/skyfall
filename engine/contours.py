@@ -2,7 +2,6 @@ import os
 
 import cv2
 
-from models.model_p1 import MetadataContour
 from models.model_utils import ContourType
 
 
@@ -209,7 +208,7 @@ class ContourFinder:
 
             if crop:
                 # cropping metadata
-                metadata_contour = MetadataContour(x, y, w, h)
+                metadata_contour = {'x': x, 'y': y, 'w': w, 'h': h}
                 metadata.append(metadata_contour)
 
                 # crop contour & convert to grayscale

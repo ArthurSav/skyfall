@@ -28,7 +28,7 @@
           ]]>
   </component>
 
-  <component name="button">
+  <component name="fab">
     <![CDATA[
     <Button
         onPress={onPressLearnMore}
@@ -46,7 +46,7 @@
           ]]>
   </component>
 
-  <component name="list">
+  <component name="list_item">
     <![CDATA[
     <FlatList data={[{ key: 'This is item 1' }, { key: 'This is item 2' }]} renderItem={({ item }) =><Text>{item.key}</Text>}
     />

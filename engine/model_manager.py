@@ -459,6 +459,8 @@ class ModelCreator:
         for result in results:
             print("Label: {}, score: {}".format(result['label'], result['score']))
 
+        return results
+
     def load_model(self, name):
         """
         Loads model from model dir

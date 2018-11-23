@@ -13,6 +13,8 @@ from models.model_utils import ContourType
 from ui.widgets import ImageWidget, ImageGridLayout
 from utils.utils_camera import CameraManager
 
+from converters.converter import Converter
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
 screen_detection_ui = uic.loadUiType(dir_path + '/screen_detection.ui')[0]
 
@@ -27,6 +29,7 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
     video_fps = 5
 
     creator = ModelCreator('data')
+    converter = None
 
     STATE_AUTOMATIC = 0
     STATE_MANUAL = 1
@@ -51,12 +54,18 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
 
         self.listWidget.itemSelectionChanged.connect(self.on_list_item_select)
 
+        self.converter = Converter()
+        self.converter.set_ouput("Test.js")
+
         self.__setup_code_generation_progress_loader()
         self.invalidate_displayed_models()
         self.__set_code_generation_state(self.STATE_AUTOMATIC)
 
-        # preselect first model
-        self.listWidget.setCurrentRow(0)
+        # preselect last model available
+        preselected_position = 0
+        if self.listWidget.count() > 0:
+            preselected_position = self.listWidget.count()-1
+        self.listWidget.setCurrentRow(preselected_position)
 
         # start recording by default
         self.open_camera()
@@ -126,7 +135,12 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         return self.widget_progress.state() == self.widget_progress.Running
 
     def on_cropped_images_updated(self, images, metadata):
-        self.creator.predict(images, metadata)
+
+        # identify components
+        results = self.creator.predict(images, metadata)
+
+        # generate code
+        self.converter.convert(results)
 
     def __on_click_recording(self):
         """
