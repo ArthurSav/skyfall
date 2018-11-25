@@ -421,7 +421,13 @@ class ModelCreator:
 
         self.path = os.path.abspath(path)
 
-    def train(self, name=None):
+    def train(self, name):
+        """
+        Trains a new model on the components saved
+        :param name: model name
+        """
+
+        self.__rename_current_model_dir(name)
         path = self.get_model_dir_path()
 
         # load & preprocess images
@@ -573,7 +579,18 @@ class ModelCreator:
         if not self.model_name:
             raise Exception("Model name is missing")
         if self.model is None:
-            raise Exception("Mode file is missing")
+            raise Exception("Model file is missing")
         if not self.model_path:
             raise Exception("Model directory path is missing")
+
+    def __rename_current_model_dir(self, name):
+        current_model_dir = self.get_model_dir_path()
+        renamed_model_dir = os.path.join(self.path, name)
+        os.rename(current_model_dir, renamed_model_dir)
+
+        self.model_name = name
+        self.model_path = renamed_model_dir
+
+
+
 

@@ -193,6 +193,8 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
 
         name = self.lineEdit.text()
 
+        current_name = self.creator.get_model_dir_path()
+
         if not name:
             print("Please provide a valid model name")
             return
