@@ -1,1 +1,1 @@
-MODEL_EXPORT_PATH = "models"
+PATH_MODEL_EXPORT = "models"
