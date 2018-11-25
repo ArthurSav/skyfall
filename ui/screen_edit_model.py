@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QMainWindow, QFileDialog, QDialog
 from engine.contours import ContourFinder
 from engine.model_manager import ModelCreator, DataLoader
 from engine.contours import ContourType
+from ui import MODEL_EXPORT_PATH
 from ui.widgets import ImageWidget, ImageGridLayout
 from utils.utils_camera import CameraManager
 
@@ -36,7 +37,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
 
     cropped_images = None
 
-    creator = ModelCreator('data')
+    creator = ModelCreator(MODEL_EXPORT_PATH)
 
     loader = DataLoader()
 

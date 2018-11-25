@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QMainWindow, QFileDialog
 from engine.contours import ContourFinder
 from engine.model_manager import ModelCreator
 from engine.contours import ContourType
+from ui import MODEL_EXPORT_PATH
 from ui.widgets import ImageWidget, ImageGridLayout
 from utils.utils_camera import CameraManager
 
@@ -28,7 +29,7 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
     scale_dimen = 150
     video_fps = 5
 
-    creator = ModelCreator('data')
+    creator = ModelCreator(MODEL_EXPORT_PATH)
     converter = None
 
     STATE_AUTOMATIC = 0
