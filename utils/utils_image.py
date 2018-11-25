@@ -1,13 +1,19 @@
+import enum
+
 import cv2
 import matplotlib.pylab as plt
 import numpy as np
 from skimage.transform import pyramid_reduce
 
-from models.model_utils import DisplaySize
-
 """
 Image manipulation utils
 """
+
+
+class DisplaySize(enum):
+    SMALL = 0
+    MEDIUM = 1
+    BIG = 2
 
 
 def convert_to_square(image, size, retain_aspect_ratio=False):
