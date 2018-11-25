@@ -2,77 +2,76 @@ import os
 import xml.etree.ElementTree as et
 
 import autopep8 as pep
+from mako.template import Template
 
 
 class ReactConverter:
 
-    replace_var_filename = '{_FILENAME_}'
-    replace_var_components = '{_COMPONENTS_}'
-
-    generated_code = None
-
-    injectable_file = None  # file to be modified after code is generated i.e /project/hello/ScreenComponent.js
+    template = None
     template_components = None
-    template_file = None  # code of the template to generate
 
-    def __init__(self, template_filepath):
+    def __init__(self, filepath_template, filepath_template_components):
+        """
+        :param filepath_template: template filepath
+        :param filepath_template_components: component template filepath
+        """
 
-        template_filepath = os.path.abspath(template_filepath)
+        filepath_template = os.path.abspath(filepath_template)
+        filepath_template_components = os.path.abspath(filepath_template_components)
 
-        if not os.path.isfile(template_filepath):
-            raise Exception('Could not load template with name "{}".'.format(template_filepath))
+        if not os.path.isfile(filepath_template):
+            raise Exception('Could not load template with name "{}".'.format(filepath_template))
 
-        self.__load_file_data(template_filepath)
+        if not os.path.isfile(filepath_template_components):
+            raise Exception('Could not load template with name "{}".'.format(filepath_template_components))
 
-    def generate(self, components_to_generate, filepath):
+        self.template = Template(filename=filepath_template)
+        self.__load_template_components(filepath_template_components)
+
+    def generate(self, cls_name, components_to_generate):
         """
         :param components_to_generate:  [{name: 'toolbar', x: 1, y: 1, w: 1, h: 1}]
-        :param filepath: used for the filename i.e 'HomeScreen.js' to inject into the template
+        :param cls_name: class name to be injected
         :return: generate code
         """
 
         # create a list of code to inject
-        generated_components = self.__generate_components(self.template_components, components_to_generate)
+        generated_components = self.__parse_components(self.template_components, components_to_generate)
 
         # inject code into template
-        generated_template = self.__generate_template(filepath, generated_components)
+        generated_template = self.__generate_template(cls_name, generated_components)
 
         return generated_template
 
-    def __generate_template(self, filename_base, generated_components):
+    def __generate_template(self, name, generated_components):
         """
-        Injects code into template
-
-        filename_base: used as class name for template
-        generated_components: list of components and code to inject i.e {'name': 'toolbar', 'code': '...'}
+         Injects code into template
+        :param name: class name
+        :param generated_components: list of injectable component code
+        :return: rendered template
         """
 
-        injectable_code_components = self.__generated_components_to_string(generated_components)
-
-        template = self.template_file
-        template = template.replace(self.replace_var_filename, filename_base)
-        template = template.replace(self.replace_var_components, injectable_code_components)
+        result = self.template.render(filename=name, components=generated_components)
 
         # pep8 code format
-        template = pep.fix_code(template, options={'select': ['E1', 'W1']})
+        result = pep.fix_code(result, options={'select': ['E1', 'W1']})
 
-        return template
+        return result
 
-    def __load_file_data(self, xml_template_filepath):
+    def __load_template_components(self, filepath):
         """
-        Loads and defines xml elements
-        root: xml root
+        Load component elements from xml file
+        :param filepath: i.e /projects/skyfall/template.xml
         """
 
         # parse xml
-        root = et.parse(xml_template_filepath).getroot()
+        root = et.parse(filepath).getroot()
 
         # xml project attributes
         project_name = root.attrib['name']
 
         components = {}
         component_names = []
-        template = None
 
         # xml project children
         for child in root:
@@ -81,29 +80,22 @@ class ReactConverter:
                 components[name] = child.text
                 component_names.append(name)
 
-            elif child.tag == 'template':
-                template = child.text
-
-        # check stuff is not empty
-        if template is None or not template:
-            raise ValueError('A project template is required')
         if components is None or not components:
             print('No components where found')
             return
 
-        print('Loading xml data from "{}"'.format(xml_template_filepath))
+        print('Loading xml data from "{}"'.format(filepath))
         print('Template components: {}'.format(component_names))
 
         self.template_components = components
-        self.template_file = template
 
     @staticmethod
-    def __generate_components(template_components, named_components):
+    def __parse_components(template_components, named_components):
         """
-        template_components: a list pre-defined component code
-        named_components: a list that contains (at least) the names of the components we want to generate i.e [{x, y, w, h, name}]
-
-        return a list of components and their code i.e [{'name': 'toolbar', 'code': '...'}]
+        Matches a list of component names to template components
+        :param template_components: [{'name': 'toolbar', 'code': '...'}']
+        :param named_components: i.e ['toolbar', 'button'...]
+        :return: a list of components and their code i.e [{'name': 'toolbar', 'code': '...'}]
         """
 
         g_components = []
@@ -112,8 +104,9 @@ class ReactConverter:
         for component in named_components:
             name = component['name']
             if name in template_components:
-                g_components.append({'name': name, 'code': template_components[name]})
+                code = template_components[name]
                 g_names.append(name)
+                g_components.append(code)
             else:
                 print('Trying to generate component "{}" that has not been pre-defined in xml (ignored)'.format(name))
 
@@ -121,14 +114,3 @@ class ReactConverter:
         print(g_names)
 
         return g_components
-
-    @staticmethod
-    def __generated_components_to_string(generated_components):
-        """
-        :return a single string of all components code
-        """
-        components = ""
-        for c in generated_components:
-            components += c['code']
-
-        return components
