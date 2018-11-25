@@ -1,10 +1,10 @@
-import enum
+from enum import Enum
 import os
 
 import cv2
 
 
-class ContourType(enum):
+class ContourType(Enum):
     NONE = 0
     MOBILE = 1  # Asssumes we're processing a mobile screen
     TRAINING = 2  # Assumes we're dealing with training images

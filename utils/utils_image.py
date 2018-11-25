@@ -1,4 +1,4 @@
-import enum
+from enum import Enum
 
 import cv2
 import matplotlib.pylab as plt
@@ -10,7 +10,7 @@ Image manipulation utils
 """
 
 
-class DisplaySize(enum):
+class DisplaySize(Enum):
     SMALL = 0
     MEDIUM = 1
     BIG = 2
