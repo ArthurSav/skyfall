@@ -23,13 +23,15 @@ screen_detection_ui = uic.loadUiType(dir_path + '/screen_detection.ui')[0]
 
 
 class TemplateGeneratorHelper:
-    image_queue = Queue.LifoQueue(1)
+    image_queue = Queue.Queue()
     is_processing_enabled = False
 
     processing_thread = None
 
     converter = Converter()
     creator = None
+
+    PROCESSING_INTERVAL = 1
 
     def __init__(self, creator):
         """
@@ -42,10 +44,19 @@ class TemplateGeneratorHelper:
 
     def __start_processing_thread(self):
         self.is_processing_enabled = True
-        self.processing_thread = threading.Thread(target=self.__process_queue)
+        self.processing_thread = threading.Thread(target=self.__process_queue, args=())
+        self.processing_thread.daemon = True
         self.processing_thread.start()
 
     def load_images(self, images, metadata):
+
+        if images is None or not images:
+            return
+
+        # clear queue
+        if self.image_queue.qsize() >= 2:
+            self.__clear_queue()
+
         self.image_queue.put({'cropped': images, 'metadata': metadata})
 
     def __process_queue(self):
@@ -57,14 +68,16 @@ class TemplateGeneratorHelper:
 
                 # needed when using different threads
                 with self.creator.graph.as_default():
-
                     # identify components
                     results = self.creator.predict(images, metadata)
 
                 # generate code
                 self.converter.convert(results)
+                time.sleep(self.PROCESSING_INTERVAL)
 
-            time.sleep(1)
+    def __clear_queue(self):
+        with self.image_queue.mutex:
+            self.image_queue.queue.clear()
 
     def set_output(self, filepath):
         self.converter.set_ouput(filepath)
@@ -106,11 +119,11 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         self.btnPicture.clicked.connect(self.__on_click_picture)
         self.listWidget.itemSelectionChanged.connect(self.on_list_item_select)
 
-        self.generatorHelper = TemplateGeneratorHelper(self.creator)
-
         self.__setup_component_list()
         self.__setup_code_generation_progress_loader()
         self.__set_code_generation_state(self.STATE_AUTOMATIC)
+
+        self.generatorHelper = TemplateGeneratorHelper(self.creator)
 
         # start recording by default
         self.open_camera()
@@ -262,3 +275,4 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
 
     def closeEvent(self, event):
         self.camera_manager.close_camera()
+        self.generatorHelper.close_thread()
