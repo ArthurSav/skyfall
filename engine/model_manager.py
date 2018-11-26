@@ -3,6 +3,7 @@ import shutil
 
 import cv2
 import numpy as np
+import tensorflow as tf
 from keras import utils
 from keras.layers import Conv2D, Dense, Flatten, MaxPooling2D
 from keras.models import Sequential, load_model
@@ -405,6 +406,8 @@ class ModelCreator:
 
     model = None
     model_path = None
+
+    graph = tf.get_default_graph()
 
     loader = DataLoader()
     trainer = ModelTrain()

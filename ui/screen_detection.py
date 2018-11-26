@@ -1,5 +1,8 @@
 #!/usr/local/bin/python3
 import os
+import queue as Queue
+import threading
+import time
 
 import cv2
 from PyQt5 import QtWidgets, uic
@@ -7,30 +10,79 @@ from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QImage, QMovie
 from PyQt5.QtWidgets import QMainWindow, QFileDialog
 
+from converters.converter import Converter
 from engine.contours import ContourFinder
-from engine.model_manager import ModelCreator
 from engine.contours import ContourType
+from engine.model_manager import ModelCreator
 from ui import PATH_MODEL_EXPORT
 from ui.widgets import ImageWidget, ImageGridLayout
 from utils.utils_camera import CameraManager
-
-from converters.converter import Converter
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 screen_detection_ui = uic.loadUiType(dir_path + '/screen_detection.ui')[0]
 
 
+class TemplateGeneratorHelper:
+    image_queue = Queue.LifoQueue(1)
+    is_processing_enabled = False
+
+    processing_thread = None
+
+    converter = Converter()
+    creator = None
+
+    def __init__(self, creator):
+        """
+        :param creator: ModelCreator
+        """
+        self.creator = creator
+        self.converter.set_ouput("Test.js")
+
+        self.__start_processing_thread()
+
+    def __start_processing_thread(self):
+        self.is_processing_enabled = True
+        self.processing_thread = threading.Thread(target=self.__process_queue)
+        self.processing_thread.start()
+
+    def load_images(self, images, metadata):
+        self.image_queue.put({'cropped': images, 'metadata': metadata})
+
+    def __process_queue(self):
+        while self.is_processing_enabled:
+            if not self.image_queue.empty():
+                data = self.image_queue.get()
+                images = data['cropped']
+                metadata = data['metadata']
+
+                # needed when using different threads
+                with self.creator.graph.as_default():
+
+                    # identify components
+                    results = self.creator.predict(images, metadata)
+
+                # generate code
+                self.converter.convert(results)
+
+            time.sleep(1)
+
+    def set_output(self, filepath):
+        self.converter.set_ouput(filepath)
+
+    def close_thread(self):
+        self.is_processing_enabled = False
+
+
 class ScreenDetection(QMainWindow, screen_detection_ui):
     camera_manager = CameraManager()
     finder = ContourFinder()
+    creator = ModelCreator(PATH_MODEL_EXPORT)
+    generatorHelper = None
 
-    is_processing_enabled = False
+    is_contour_processing_enabled = False
     # cropped images displayed size
     scale_dimen = 150
     video_fps = 5
-
-    creator = ModelCreator(PATH_MODEL_EXPORT)
-    converter = None
 
     STATE_AUTOMATIC = 0
     STATE_MANUAL = 1
@@ -52,21 +104,13 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         # self.btnGenerate.clicked.connect(self.set_loading_state)
         self.btnLive.clicked.connect(self.__on_click_recording)
         self.btnPicture.clicked.connect(self.__on_click_picture)
-
         self.listWidget.itemSelectionChanged.connect(self.on_list_item_select)
 
-        self.converter = Converter()
-        self.converter.set_ouput("Test.js")
+        self.generatorHelper = TemplateGeneratorHelper(self.creator)
 
+        self.__setup_component_list()
         self.__setup_code_generation_progress_loader()
-        self.invalidate_displayed_models()
         self.__set_code_generation_state(self.STATE_AUTOMATIC)
-
-        # preselect last model available
-        preselected_position = 0
-        if self.listWidget.count() > 0:
-            preselected_position = self.listWidget.count()-1
-        self.listWidget.setCurrentRow(preselected_position)
 
         # start recording by default
         self.open_camera()
@@ -85,7 +129,7 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         if scale == 0:
             scale = 1
 
-        if self.is_processing_enabled:
+        if self.is_contour_processing_enabled:
 
             self.__set_loading_indicator_state(self.code_gen_state == self.STATE_AUTOMATIC)
 
@@ -98,7 +142,7 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
 
             self.gridLayout_2.add_images(cropped, scale_width=self.scale_dimen, scale_height=self.scale_dimen,
                                          replace=True, is_checkable=False)
-            self.on_cropped_images_updated(cropped, metadata)
+            self.generatorHelper.load_images(cropped, metadata)
         else:
             self.__set_loading_indicator_state(False)
             image = cv2.resize(frame, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
@@ -122,6 +166,15 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         widget_movie.start()
         widget_movie.stop()
 
+    def __setup_component_list(self):
+        self.invalidate_displayed_models()
+
+        # preselect last model available
+        preselected_position = 0
+        if self.listWidget.count() > 0:
+            preselected_position = self.listWidget.count() - 1
+        self.listWidget.setCurrentRow(preselected_position)
+
     def __set_loading_indicator_state(self, is_loading):
         if is_loading and not self.__is_loading_indicator_active():
             self.widget_progress.start()
@@ -135,14 +188,6 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         """
         return self.widget_progress.state() == self.widget_progress.Running
 
-    def on_cropped_images_updated(self, images, metadata):
-
-        # identify components
-        results = self.creator.predict(images, metadata)
-
-        # generate code
-        self.converter.convert(results)
-
     def __on_click_recording(self):
         """
         Opens camera and displays video
@@ -153,12 +198,12 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         self.open_camera()
 
         # start/stop video analysis
-        if self.is_processing_enabled:
+        if self.is_contour_processing_enabled:
             self.btnLive.setText("Start recording")
-            self.is_processing_enabled = False
+            self.is_contour_processing_enabled = False
         else:
             self.btnLive.setText("Stop recording")
-            self.is_processing_enabled = True
+            self.is_contour_processing_enabled = True
 
     def __on_click_picture(self):
         """
@@ -171,7 +216,7 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         image = cv2.imread(path)
 
         if image is not None:
-            self.is_processing_enabled = True
+            self.is_contour_processing_enabled = True
             self.close_camera()
             self.update_frame(image)
         else:
