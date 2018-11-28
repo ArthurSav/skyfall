@@ -119,7 +119,7 @@ class CameraHelper:
         if self.camera.is_camera_open():
             return
 
-        self.camera.open_camera(fps=30)
+        self.camera.open_camera(fps=self.fps)
 
     def close_camera(self):
         self.camera.close_camera()
