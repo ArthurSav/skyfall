@@ -34,6 +34,8 @@ class CameraHelper:
 
     image_queue = Queue.Queue()
 
+    fps = 5
+
     def __init__(self, window_width, window_height, callback_on_image_updated, callback_on_image_cropped):
         self.window_width = window_width
         self.window_height = window_height
