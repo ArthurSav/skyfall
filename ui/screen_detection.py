@@ -27,6 +27,7 @@ class CameraHelper:
     finder = ContourFinder()
 
     is_contour_detection_enabled = False
+    is_contour_cropping_enabled = False
 
     callback_on_image_updated = None
     callback_on_image_cropped = None
@@ -73,7 +74,8 @@ class CameraHelper:
     def __apply_contours(self, frame):
         finder = self.finder
         finder.load_image(frame)
-        image, cropped, metadata = self.finder.draw_and_crop_contours(ContourType.MOBILE, verbose=True, crop=True)
+        image, cropped, metadata = self.finder.draw_and_crop_contours(ContourType.MOBILE, verbose=True,
+                                                                      crop=self.is_contour_cropping_enabled)
         return image, cropped, metadata
 
     def __resize_to_window(self, frame):
@@ -99,6 +101,9 @@ class CameraHelper:
 
     def set_contours_enabled(self, is_enabled):
         self.is_contour_detection_enabled = is_enabled
+
+    def set_contours_cropping_enabled(self, is_enabled):
+        self.is_contour_cropping_enabled = is_enabled
 
     def load_image(self, filepath):
 
@@ -191,7 +196,6 @@ class TemplateGeneratorHelper:
 
 
 class ScreenDetection(QMainWindow, screen_detection_ui):
-
     camera_helper = None
 
     creator = ModelCreator(PATH_MODEL_EXPORT)
@@ -221,6 +225,11 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         self.btnLive.clicked.connect(self.__on_click_recording)
         self.btnPicture.clicked.connect(self.__on_click_picture)
         self.listWidget.itemSelectionChanged.connect(self.on_list_item_select)
+
+        self.checkBoxContours.stateChanged \
+            .connect(lambda: self.__on_checkbox_contours_changed(self.checkBoxContours.isChecked()))
+        self.checkBoxCrop.stateChanged \
+            .connect(lambda: self.__on_checkbox_cropped_changed(self.checkBoxCrop.isChecked()))
 
         self.__setup_component_list()
         self.__setup_code_generation_progress_loader()
@@ -299,6 +308,15 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         """
         path = self.open_filename_dialog()
         self.camera_helper.load_image(path)
+
+    def __on_checkbox_contours_changed(self, is_checked):
+        self.camera_helper.set_contours_enabled(is_checked)
+        self.checkBoxCrop.setEnabled(is_checked)
+        if is_checked:
+            self.checkBoxCrop.setChecked(is_checked)
+
+    def __on_checkbox_cropped_changed(self, is_checked):
+        self.camera_helper.set_contours_cropping_enabled(is_checked)
 
     def open_filename_dialog(self):
         options = QFileDialog.Options()

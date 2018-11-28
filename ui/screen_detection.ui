@@ -168,7 +168,7 @@
        <x>0</x>
        <y>0</y>
        <width>331</width>
-       <height>112</height>
+       <height>201</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -181,7 +181,7 @@
       <item>
        <widget class="QPushButton" name="btnLive">
         <property name="text">
-         <string>Live</string>
+         <string>Camera</string>
         </property>
        </widget>
       </item>
@@ -192,13 +192,45 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QFrame" name="frame_6">
+        <property name="styleSheet">
+         <string notr="true">padding: 0</string>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::NoFrame</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_5">
+         <item>
+          <widget class="QCheckBox" name="checkBoxContours">
+           <property name="text">
+            <string>Contours</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="checkBoxCrop">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Crop</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
      </layout>
     </widget>
     <widget class="QToolBox" name="toolBox">
      <property name="geometry">
       <rect>
        <x>0</x>
-       <y>120</y>
+       <y>240</y>
        <width>331</width>
        <height>471</height>
       </rect>
