@@ -235,10 +235,7 @@ class ContourFinder:
         if verbose:
             print("contours: {}, cropped: {}".format(len(contours), len(cropped)))
 
-        if crop:
-            return image_with_contours, cropped, metadata
-
-        return image_with_contours
+        return image_with_contours, cropped, metadata
 
     @staticmethod
     def __calculate_percentage_area(w1, h1, w2, h2):
