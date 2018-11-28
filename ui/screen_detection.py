@@ -140,7 +140,7 @@ class TemplateGeneratorHelper:
     converter = Converter()
     creator = None
 
-    PROCESSING_INTERVAL = 1
+    PROCESSING_INTERVAL = 2
 
     def __init__(self, creator):
         """
@@ -182,7 +182,8 @@ class TemplateGeneratorHelper:
 
                 # generate code
                 self.converter.convert(results)
-                time.sleep(self.PROCESSING_INTERVAL)
+
+            time.sleep(self.PROCESSING_INTERVAL)
 
     def __clear_queue(self):
         with self.image_queue.mutex:
