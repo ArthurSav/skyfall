@@ -22,6 +22,110 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 screen_detection_ui = uic.loadUiType(dir_path + '/screen_detection.ui')[0]
 
 
+class CameraHelper:
+    camera = CameraManager()
+    finder = ContourFinder()
+
+    is_contour_detection_enabled = False
+
+    callback_on_image_updated = None
+    callback_on_image_cropped = None
+
+    image_queue = Queue.Queue()
+
+    def __init__(self, window_width, window_height, callback_on_image_updated, callback_on_image_cropped):
+        self.window_width = window_width
+        self.window_height = window_height
+        self.callback_on_image_updated = callback_on_image_updated
+        self.callback_on_image_cropped = callback_on_image_cropped
+
+        self.__processor_thread = threading.Thread(target=self.__queue_processor, args=())
+        self.__processor_thread.daemon = True
+        self.__processor_thread.start()
+
+    def __queue_processor(self):
+        while True:
+            frame = None
+
+            # camera frames
+            if self.camera.is_camera_open():
+                if self.camera.has_frames():
+                    frame = self.camera.get_next_frame()
+
+            # other sources
+            elif not self.image_queue.empty():
+                frame = self.image_queue.get()
+
+            if frame is not None:
+                self.__process_frame(frame)
+
+    def __process_frame(self, frame):
+
+        if self.is_contour_detection_enabled:
+            frame, cropped, metadata = self.__apply_contours(frame)
+            self.callback_on_image_cropped(cropped, metadata)
+
+        frame = self.__resize_to_window(frame)
+        qimage = self.export_to_qimage(frame)
+
+        self.callback_on_image_updated(qimage)
+
+    def __apply_contours(self, frame):
+        finder = self.finder
+        finder.load_image(frame)
+        image, cropped, metadata = self.finder.draw_and_crop_contours(ContourType.MOBILE, verbose=True, crop=True)
+        return image, cropped, metadata
+
+    def __resize_to_window(self, frame):
+        img_height, img_width, img_colors = frame.shape
+        scale_w = float(self.window_width) / float(img_width)
+        scale_h = float(self.window_height) / float(img_height)
+        scale = min(scale_w, scale_h)
+
+        if scale == 0:
+            scale = 1
+
+        image = cv2.resize(frame, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        return image
+
+    def clear_queue(self):
+        with self.queue.mutex:
+            self.queue.queue.clear()
+
+    def is_contours_enabled(self):
+        return self.is_contour_detection_enabled
+
+    def set_contours_enabled(self, is_enabled):
+        self.is_contour_detection_enabled = is_enabled
+
+    def load_image(self, filepath):
+
+        if not os.path.isfile(filepath):
+            raise Exception("Could not load image with path {}".format(filepath))
+        self.close_camera()
+
+        image = cv2.imread(filepath)
+        self.image_queue.put(image)
+
+    def open_camera(self):
+
+        if self.camera.is_camera_open():
+            return
+
+        self.camera.open_camera(fps=30)
+
+    def close_camera(self):
+        self.camera.close_camera()
+
+    @staticmethod
+    def export_to_qimage(frame):
+        height, width, bpc = frame.shape
+        bpl = bpc * width
+        return QImage(frame.data, width, height, bpl, QImage.Format_RGB888)
+
+
 class TemplateGeneratorHelper:
     image_queue = Queue.Queue()
     is_processing_enabled = False
@@ -87,15 +191,14 @@ class TemplateGeneratorHelper:
 
 
 class ScreenDetection(QMainWindow, screen_detection_ui):
-    camera_manager = CameraManager()
-    finder = ContourFinder()
+
+    camera_helper = None
+
     creator = ModelCreator(PATH_MODEL_EXPORT)
     generatorHelper = None
 
-    is_contour_processing_enabled = False
     # cropped images displayed size
     scale_dimen = 150
-    video_fps = 5
 
     STATE_AUTOMATIC = 0
     STATE_MANUAL = 1
@@ -126,46 +229,18 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         self.generatorHelper = TemplateGeneratorHelper(self.creator)
 
         # start recording by default
-        self.open_camera()
+        self.camera_helper = CameraHelper(self.window_width, self.window_height,
+                                          self.__on_image_updated,
+                                          self.__on_image_cropped)
+        self.camera_helper.open_camera()
 
-    def update_frame(self, frame):
-        """
-        Use it to display either a video feed or just a regular image
-        :param frame: image to be displayed
-        """
+    def __on_image_updated(self, qImage):
+        self.widgetCamera.setImage(qImage)
 
-        img_height, img_width, img_colors = frame.shape
-        scale_w = float(self.window_width) / float(img_width)
-        scale_h = float(self.window_height) / float(img_height)
-        scale = min(scale_w, scale_h)
-
-        if scale == 0:
-            scale = 1
-
-        if self.is_contour_processing_enabled:
-
-            self.__set_loading_indicator_state(self.code_gen_state == self.STATE_AUTOMATIC)
-
-            finder = self.finder
-            finder.load_image(frame)
-
-            image, cropped, metadata = finder.draw_and_crop_contours(ContourType.MOBILE, verbose=True, crop=True)
-            image = cv2.resize(image, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-            self.gridLayout_2.add_images(cropped, scale_width=self.scale_dimen, scale_height=self.scale_dimen,
-                                         replace=True, is_checkable=False)
-            self.generatorHelper.load_images(cropped, metadata)
-        else:
-            self.__set_loading_indicator_state(False)
-            image = cv2.resize(frame, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-        height, width, bpc = image.shape
-        bpl = bpc * width
-
-        img = QImage(image.data, width, height, bpl, QImage.Format_RGB888)
-        self.widgetCamera.setImage(img)
+    def __on_image_cropped(self, cropped, metadata):
+        self.gridLayout_2.add_images(cropped, scale_width=self.scale_dimen, scale_height=self.scale_dimen,
+                                     replace=True, is_checkable=False)
+        self.generatorHelper.load_images(cropped, metadata)
 
     def __setup_code_generation_progress_loader(self):
 
@@ -208,7 +283,7 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
 
         QtWidgets.QApplication.processEvents()
 
-        self.open_camera()
+        self.camera_helper.open_camera()
 
         # start/stop video analysis
         if self.is_contour_processing_enabled:
@@ -222,31 +297,14 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         """
         Opens file picker + loads image into imageview
         """
-
-        QtWidgets.QApplication.processEvents()
-
         path = self.open_filename_dialog()
-        image = cv2.imread(path)
-
-        if image is not None:
-            self.is_contour_processing_enabled = True
-            self.close_camera()
-            self.update_frame(image)
-        else:
-            print("Could not load image")
+        self.camera_helper.load_image(path)
 
     def open_filename_dialog(self):
         options = QFileDialog.Options()
         fileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
                                                   "Image (*.png *.jpg *.jpeg)", options=options)
         return fileName
-
-    def open_camera(self):
-        if not self.camera_manager.is_camera_open():
-            self.camera_manager.open_camera(self, self.update_frame, fps=self.video_fps)
-
-    def close_camera(self):
-        self.camera_manager.close_camera()
 
     def on_list_item_select(self):
         selected_item = self.listWidget.currentItem()
@@ -274,5 +332,5 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
             self.btnGenerate.setEnabled(True)
 
     def closeEvent(self, event):
-        self.camera_manager.close_camera()
+        self.camera_helper.close_camera()
         self.generatorHelper.close_thread()
