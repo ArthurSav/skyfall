@@ -62,6 +62,8 @@ class CameraHelper:
             if frame is not None:
                 self.__process_frame(frame)
 
+            time.sleep(0.01)
+
     def __process_frame(self, frame):
 
         if self.is_contour_detection_enabled:
