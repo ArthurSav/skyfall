@@ -211,6 +211,11 @@ class ContourFinder:
             # rectangle coordinates
             x, y, w, h = cv2.boundingRect(c)
 
+            # draw contour
+            peri = cv2.arcLength(c, True)
+            approx = cv2.approxPolyDP(c, 0.02 * peri, True)
+            cv2.drawContours(image_with_contours, [approx], -1, (0, 255, 0), 2)
+
             if crop:
                 # cropping metadata
                 metadata_contour = {'x': x, 'y': y, 'w': w, 'h': h}
@@ -224,11 +229,6 @@ class ContourFinder:
                 try:
                     cropped_image.shape
                     cropped.append(cropped_image)
-
-                    # draw contour
-                    peri = cv2.arcLength(c, True)
-                    approx = cv2.approxPolyDP(c, 0.02 * peri, True)
-                    cv2.drawContours(image_with_contours, [approx], -1, (0, 255, 0), 2)
                 except AttributeError:
                     continue
 
