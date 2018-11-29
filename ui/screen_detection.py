@@ -65,7 +65,6 @@ class CameraHelper:
             time.sleep(0.01)
 
     def __process_frame(self, frame):
-
         if self.is_contour_detection_enabled:
             frame, cropped, metadata = self.__apply_contours(frame)
             self.callback_on_image_cropped(cropped, metadata)
@@ -83,7 +82,12 @@ class CameraHelper:
         return image, cropped, metadata
 
     def __resize_to_window(self, frame):
-        img_height, img_width, img_colors = frame.shape
+
+        if len(frame.shape) == 3:
+            img_height, img_width, img_colors = frame.shape
+        else:
+            img_height, img_width = frame.shape
+
         scale_w = float(self.window_width) / float(img_width)
         scale_h = float(self.window_height) / float(img_height)
         scale = min(scale_w, scale_h)
@@ -130,7 +134,11 @@ class CameraHelper:
 
     @staticmethod
     def export_to_qimage(frame):
-        height, width, bpc = frame.shape
+        bpc = 1
+        if len(frame.shape) == 3:
+            height, width, bpc = frame.shape
+        else:
+            height, width = frame.shape
         bpl = bpc * width
         return QImage(frame.data, width, height, bpl, QImage.Format_RGB888)
 
