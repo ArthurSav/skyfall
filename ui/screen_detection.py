@@ -199,7 +199,7 @@ class TemplateGeneratorHelper:
         :param creator: ModelCreator
         """
         self.creator = creator
-        self.converter.set_ouput("Test.js")
+        self.converter.set_ouput("/Users/artursaveljev/lab/my-expo-project/screens/GeneratedScreen.js")
 
         self.__start_processing_thread()
 
