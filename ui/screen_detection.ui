@@ -209,6 +209,9 @@
            <property name="text">
             <string>Contours</string>
            </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
          <item>
@@ -293,8 +296,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>291</width>
-        <height>343</height>
+        <width>80</width>
+        <height>16</height>
        </rect>
       </property>
       <attribute name="label">
