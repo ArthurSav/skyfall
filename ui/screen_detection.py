@@ -22,6 +22,34 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 screen_detection_ui = uic.loadUiType(dir_path + '/screen_detection.ui')[0]
 
 
+class ImageHelper:
+
+    @staticmethod
+    def apply_contours(image):
+        # convert to grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        gray = cv2.bilateralFilter(gray, 11, 17, 17)
+        edged = cv2.Canny(gray, 10, 250)
+
+        # apply closing function
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
+        closed = cv2.morphologyEx(edged, cv2.MORPH_CLOSE, kernel)
+
+        # find contours
+        img_contour, contours, hierarchy = cv2.findContours(closed.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        for c in contours:
+            # rectangle coordinates
+            x, y, w, h = cv2.boundingRect(c)
+
+            # draw contour
+            peri = cv2.arcLength(c, True)
+            approx = cv2.approxPolyDP(c, 0.02 * peri, True)
+            cv2.drawContours(image, [approx], -1, (0, 255, 0), 2)
+
+        return image
+
+
 class CameraHelper:
     camera = CameraManager()
     finder = ContourFinder()
@@ -33,6 +61,9 @@ class CameraHelper:
     callback_on_image_cropped = None
 
     image_queue = Queue.Queue()
+    cropped_queue = Queue.Queue()
+
+    contour_type = None
 
     fps = 5
 
@@ -77,8 +108,13 @@ class CameraHelper:
     def __apply_contours(self, frame):
         finder = self.finder
         finder.load_image(frame)
-        image, cropped, metadata = self.finder.draw_and_crop_contours(ContourType.MOBILE, verbose=True,
-                                                                      crop=self.is_contour_cropping_enabled)
+
+        if self.contour_type == ContourType.MOBILE:
+            image, cropped, metadata = self.finder.draw_and_crop_contours(ContourType.MOBILE, verbose=True,
+                                                                          crop=self.is_contour_cropping_enabled)
+        else:
+            image, cropped, metadata = self.finder.draw_and_crop_contours(ContourType.TRAINING, verbose=True,
+                                                                          crop=self.is_contour_cropping_enabled)
         return image, cropped, metadata
 
     def __resize_to_window(self, frame):
@@ -99,6 +135,12 @@ class CameraHelper:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         return image
+
+    def set_contour_type(self, contour_type):
+        """
+        :param contour_type: ContourType
+        """
+        self.contour_type = contour_type
 
     def clear_queue(self):
         with self.queue.mutex:
@@ -123,10 +165,8 @@ class CameraHelper:
         self.image_queue.put(image)
 
     def open_camera(self):
-
         if self.camera.is_camera_open():
             return
-
         self.camera.open_camera(fps=self.fps)
 
     def close_camera(self):
@@ -254,6 +294,11 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         self.camera_helper = CameraHelper(self.window_width, self.window_height,
                                           self.__on_image_updated,
                                           self.__on_image_cropped)
+
+        self.camera_helper.set_contour_type(ContourType.MOBILE)
+        self.camera_helper.set_contours_enabled(self.checkBoxContours.isChecked())
+        self.checkBoxCrop.setEnabled(self.checkBoxContours.isChecked())
+
         self.camera_helper.open_camera()
 
     def __on_image_updated(self, qImage):
@@ -299,34 +344,19 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         return self.widget_progress.state() == self.widget_progress.Running
 
     def __on_click_recording(self):
-        """
-        Opens camera and displays video
-        """
-
-        QtWidgets.QApplication.processEvents()
-
         self.camera_helper.open_camera()
-
-        # start/stop video analysis
-        if self.is_contour_processing_enabled:
-            self.btnLive.setText("Start recording")
-            self.is_contour_processing_enabled = False
-        else:
-            self.btnLive.setText("Stop recording")
-            self.is_contour_processing_enabled = True
 
     def __on_click_picture(self):
         """
         Opens file picker + loads image into imageview
         """
         path = self.open_filename_dialog()
-        self.camera_helper.load_image(path)
+        if path:
+            self.camera_helper.load_image(path)
 
     def __on_checkbox_contours_changed(self, is_checked):
         self.camera_helper.set_contours_enabled(is_checked)
         self.checkBoxCrop.setEnabled(is_checked)
-        if is_checked:
-            self.checkBoxCrop.setChecked(is_checked)
 
     def __on_checkbox_cropped_changed(self, is_checked):
         self.camera_helper.set_contours_cropping_enabled(is_checked)
