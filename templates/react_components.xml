@@ -3,52 +3,53 @@
   <component name="toolbar">
     <![CDATA[
     <ToolbarAndroid
-            style={styles.toolbar}
-            title="Test title"
-            navIcon={require("../assets/images/robot-dev.png")} />
+                    style={styles.toolbar}
+                    title="Toolbar"
+                    actions={[{
+                        title: 'Search',
+                        icon: require('../assets/images/baseline_search_white_18dp.png'),
+                        show: 'always'
+                    }]}
+                    navIcon={require("../assets/images/baseline_menu_white_24dp.png")}
+                />
           ]]>
   </component>
 
   <component name="toolbar_search">
     <![CDATA[
     <ToolbarAndroid
-            style={styles.toolbar}
-            title="Test title"
-            navIcon={require("../assets/images/robot-dev.png")}
-            actions={[{ title: 'Search', show: 'always' }]}
-            onActionSelected={this.onActionSelected} />
+                    style={styles.toolbar}
+                    title="Toolbar"
+                    navIcon={require("../assets/images/baseline_menu_white_24dp.png")}
+                />
           ]]>
   </component>
 
-  <component name="checkbox">
-    <![CDATA[
-    <Text style={styles.getStartedText}>
-            The future is here!
-            </Text>
-          ]]>
-  </component>
-
-  <component name="fab">
-    <![CDATA[
-    <Button
-        onPress={onPressLearnMore}
-        title="Learn More"
-        color="#841584"
-        accessibilityLabel="Learn more about this purple button"
-    />
-          ]]>
-  </component>
 
   <component name="image">
     <![CDATA[
-    <Image style={{ width: 50, height: 50 }} source={{ uri: 'https://facebook.github.io/react-native/docs/assets/favicon.png' }}
+    <Image
+        style={{width: 400, height: 200, marginTop: 25, marginBottom: 25}}
+        source={require("../assets/images/beach_calm_clouds.jpg")}
     />
+          ]]>
+  </component>
+
+  <component name="text">
+    <![CDATA[
+    <Text style={{margin: 10}}>
+      But I must explain to you how all this mistaken idea of denouncing pleasure and praising pain was born
+      and I will give you a complete account of the system, and expound the actual teachings of the great
+      explorer of the truth, the master-builder of human happiness. </Text>
           ]]>
   </component>
 
   <component name="list_item">
     <![CDATA[
-    <FlatList data={[{ key: 'This is item 1' }, { key: 'This is item 2' }]} renderItem={({ item }) =><Text>{item.key}</Text>}
+    <FlatList
+        style={{margin: 10}}
+        data={[{key: 'John Snow'}, {key: 'Ronald Snow'}, {key: 'Robert Snow'}]}
+        renderItem={this.renderItem.bind(this)}
     />
           ]]>
   </component>
