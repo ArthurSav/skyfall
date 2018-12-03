@@ -5,7 +5,7 @@ import threading
 import time
 
 import cv2
-from PyQt5 import QtWidgets, uic
+from PyQt5 import QtWidgets, uic, QtCore
 from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QImage, QMovie
 from PyQt5.QtWidgets import QMainWindow, QFileDialog
@@ -254,6 +254,8 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
     creator = ModelCreator(PATH_MODEL_EXPORT)
     generatorHelper = None
 
+    cropped_queue = Queue.Queue()
+
     # cropped images displayed size
     scale_dimen = 150
 
@@ -299,15 +301,29 @@ class ScreenDetection(QMainWindow, screen_detection_ui):
         self.camera_helper.set_contours_enabled(self.checkBoxContours.isChecked())
         self.checkBoxCrop.setEnabled(self.checkBoxContours.isChecked())
 
+        self.__start_cropped_queue_timer()
         self.camera_helper.open_camera()
+
+    def __start_cropped_queue_timer(self):
+        self.timer = QtCore.QTimer(self)
+        self.timer.timeout.connect(self.__process_cropped)
+        self.timer.start(1)
 
     def __on_image_updated(self, qImage):
         self.widgetCamera.setImage(qImage)
 
     def __on_image_cropped(self, cropped, metadata):
-        self.gridLayout_2.add_images(cropped, scale_width=self.scale_dimen, scale_height=self.scale_dimen,
-                                     replace=True, is_checkable=False)
-        self.generatorHelper.load_images(cropped, metadata)
+        if cropped:
+            self.cropped_queue.put({'cropped': cropped, 'metadata': metadata})
+
+    def __process_cropped(self):
+        if not self.cropped_queue.empty():
+            item = self.cropped_queue.get()
+            metadata = item['metadata']
+            cropped = item['cropped']
+            self.gridLayout_2.add_images(cropped, scale_width=self.scale_dimen, scale_height=self.scale_dimen,
+                                         replace=True, is_checkable=False)
+            self.generatorHelper.load_images(cropped, metadata)
 
     def __setup_code_generation_progress_loader(self):
 
