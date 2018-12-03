@@ -89,6 +89,7 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
     def __process_cropped(self):
         if not self.cropped_queue.empty():
             cropped = self.cropped_queue.get()
+            self.cropped_images = cropped
             self.gridLayout_2.add_images(cropped, scale_width=self.scale_dimen, scale_height=self.scale_dimen,
                                          replace=True, is_checkable=False)
 
