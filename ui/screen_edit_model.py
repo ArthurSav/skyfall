@@ -1,18 +1,16 @@
 #!/usr/local/bin/python3
 
 import os
+import queue as Queue
 
-import cv2
-from PyQt5 import QtWidgets, uic
-from PyQt5.QtGui import QImage
+from PyQt5 import QtWidgets, uic, QtCore
 from PyQt5.QtWidgets import QMainWindow, QFileDialog, QDialog
 
-from engine.contours import ContourFinder
-from engine.model_manager import ModelCreator, DataLoader
 from engine.contours import ContourType
+from engine.model_manager import ModelCreator, DataLoader
 from ui import PATH_MODEL_EXPORT
+from ui.screen_detection import CameraHelper
 from ui.widgets import ImageWidget, ImageGridLayout
-from utils.utils_camera import CameraManager
 
 # load ui file
 
@@ -26,20 +24,17 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
     UI manager for screen 'Add or Edit model'
     """
 
-    camera_manager = CameraManager()
-    finder = ContourFinder()
-
-    is_processing_enabled = False
-
-    # cropped images displayed size
-    scale_dimen = 150
-    video_fps = 5
-
+    camera_helper = None
     cropped_images = None
 
     creator = ModelCreator(PATH_MODEL_EXPORT)
 
+    # cropped images displayed size
+    scale_dimen = 150
+
     loader = DataLoader()
+
+    cropped_queue = Queue.Queue()
 
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
@@ -48,8 +43,6 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         self.creator.create_model_dir()
         self.invalidate_displayed_components()
 
-        # self.window_width = 940
-        # self.window_height = 1500
         self.window_width = self.widgetCamera.frameSize().width()
         self.window_height = self.widgetCamera.frameSize().height()
         self.widgetCamera = ImageWidget(self.widgetCamera)
@@ -63,42 +56,59 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
 
         self.btnSave.clicked.connect(self.train_model)
 
+        self.checkBoxContours.stateChanged \
+            .connect(lambda: self.__on_checkbox_contours_changed(self.checkBoxContours.isChecked()))
+        self.checkBoxCrop.stateChanged \
+            .connect(lambda: self.__on_checkbox_cropped_changed(self.checkBoxCrop.isChecked()))
+
         # start recording by default
-        self.open_camera()
+        self.camera_helper = CameraHelper(self.window_width, self.window_height,
+                                          self.__on_image_updated,
+                                          self.__on_image_cropped)
+
+        self.camera_helper.set_contour_type(ContourType.TRAINING)
+        self.camera_helper.set_contours_enabled(self.checkBoxContours.isChecked())
+        self.camera_helper.set_contours_cropping_enabled(self.checkBoxCrop.isChecked())
+        self.checkBoxCrop.setEnabled(self.checkBoxContours.isChecked())
+
+        self.__start_cropped_queue_timer()
+        self.camera_helper.open_camera()
+
+    def __start_cropped_queue_timer(self):
+        self.timer = QtCore.QTimer(self)
+        self.timer.timeout.connect(self.__process_cropped)
+        self.timer.start(1)
+
+    def __on_image_updated(self, qImage):
+        self.widgetCamera.setImage(qImage)
+
+    def __on_image_cropped(self, cropped, metadata):
+        if cropped:
+            self.cropped_queue.put(cropped)
+
+    def __process_cropped(self):
+        if not self.cropped_queue.empty():
+            cropped = self.cropped_queue.get()
+            self.gridLayout_2.add_images(cropped, scale_width=self.scale_dimen, scale_height=self.scale_dimen,
+                                         replace=True, is_checkable=False)
+
+    def __on_checkbox_contours_changed(self, is_checked):
+        self.camera_helper.set_contours_enabled(is_checked)
+        self.checkBoxCrop.setEnabled(is_checked)
+
+    def __on_checkbox_cropped_changed(self, is_checked):
+        self.camera_helper.set_contours_cropping_enabled(is_checked)
 
     def __on_click_recording(self):
-        """
-        Opens camera and displays video
-        """
-
-        QtWidgets.QApplication.processEvents()
-
-        self.open_camera()
-
-        # start/stop video analysis
-        if self.is_processing_enabled:
-            self.btnLive.setText("Start recording")
-            self.is_processing_enabled = False
-        else:
-            self.btnLive.setText("Stop recording")
-            self.is_processing_enabled = True
+        self.camera_helper.open_camera()
 
     def __on_click_picture(self):
         """
         Opens file picker + loads image into imageview
         """
-
-        QtWidgets.QApplication.processEvents()
-
         path = self.open_filename_dialog()
-        image = cv2.imread(path)
-
-        if image is not None:
-            self.is_processing_enabled = True
-            self.close_camera()
-            self.update_frame(image)
-        else:
-            print("Could not load image")
+        if path:
+            self.camera_helper.load_image(path)
 
     def save_component_images(self, name, images):
         self.creator.save_component(name, images, replace=True, verbose=True)
@@ -109,44 +119,6 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         form.show()
         form.show_images(self.cropped_images)
         form.exec_()
-
-    def update_frame(self, frame):
-        """
-        Use it to display either a video feed or just a regular image
-        :param frame: image to be displayed
-        """
-
-        img_height, img_width, img_colors = frame.shape
-        scale_w = float(self.window_width) / float(img_width)
-        scale_h = float(self.window_height) / float(img_height)
-        scale = min(scale_w, scale_h)
-
-        if scale == 0:
-            scale = 1
-
-        if self.is_processing_enabled:
-            finder = self.finder
-            finder.load_image(frame)
-
-            image, cropped, metadata = finder.draw_and_crop_contours(ContourType.TRAINING, verbose=True, crop=True)
-            image = cv2.resize(image, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-            self.gridLayout_2.add_images(cropped, scale_width=self.scale_dimen, scale_height=self.scale_dimen,
-                                         replace=True, is_checkable=False)
-            self.on_cropped_images_updated(cropped, metadata)
-        else:
-            image = cv2.resize(frame, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-        height, width, bpc = image.shape
-        bpl = bpc * width
-
-        img = QImage(image.data, width, height, bpl, QImage.Format_RGB888)
-        self.widgetCamera.setImage(img)
-
-    def on_cropped_images_updated(self, images, metadata):
-        self.cropped_images = images
 
     def invalidate_displayed_components(self):
         """
@@ -176,13 +148,6 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
             print("Removed component: {}".format(component_name))
         self.invalidate_displayed_components()
 
-    def open_camera(self):
-        if not self.camera_manager.is_camera_open():
-            self.camera_manager.open_camera(self, self.update_frame, fps=self.video_fps)
-
-    def close_camera(self):
-        self.camera_manager.close_camera()
-
     def open_filename_dialog(self):
         options = QFileDialog.Options()
         fileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
@@ -190,19 +155,14 @@ class ScreenEditModel(QMainWindow, screen_edit_model_ui):
         return fileName
 
     def train_model(self):
-
         name = self.lineEdit.text()
-
-        current_name = self.creator.get_model_dir_path()
-
         if not name:
             print("Please provide a valid model name")
             return
-
         self.creator.train(name)
 
     def closeEvent(self, event):
-        self.camera_manager.close_camera()
+        self.camera_helper.close_camera()
 
 
 class DialogAddComponent(QDialog, dialog_add_model_ui):
