@@ -436,6 +436,11 @@ class ModelCreator:
         # load & preprocess images
         names, (x_train, y_train), (x_test, y_test) = self.loader.load_training_data(path)
 
+        z = []
+        for c in x_train:
+            z.append(c.squeeze())
+        utils_image.plot_image_list(images=z)
+
         self.trainer.train(x_train, y_train)
         self.trainer.eval(x_test, y_test)
         self.trainer.save(name=name, path=path)
