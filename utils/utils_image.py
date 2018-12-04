@@ -104,7 +104,10 @@ def plot_image_list(images=None, columns=10, size=None, display=DisplaySize.SMAL
         plt.grid('off')
         plt.xticks([])
         plt.yticks([])
-        plt.imshow(image)
+        if len(image.shape) == 2:
+            plt.imshow(image, cmap='gray')
+        else:
+            plt.imshow(image)
     fig.tight_layout()
     plt.show()
 
