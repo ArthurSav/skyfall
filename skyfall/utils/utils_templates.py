@@ -2,7 +2,7 @@ import queue as Queue
 import threading
 import time
 
-from converters.converter import Converter
+from skyfall.converters.converter import Converter
 
 
 class TemplateGeneratorHelper:

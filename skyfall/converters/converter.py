@@ -1,7 +1,7 @@
 import os
 from enum import Enum
 
-from converters.converter_react import ReactConverter
+from skyfall.converters.converter_react import ReactConverter
 
 
 class ConverterType(Enum):
@@ -9,7 +9,6 @@ class ConverterType(Enum):
 
 
 class Converter:
-
     filepath_output = None
 
     react = ReactConverter('templates/react_screen.js', 'templates/react_components.xml')

@@ -7,12 +7,12 @@ from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QMovie
 from PyQt5.QtWidgets import QMainWindow, QFileDialog
 
-from engine.contours import ContourType
-from engine.model_manager import ModelCreator
+from skyfall.engine.contours import ContourType
+from skyfall.engine.model_manager import ModelCreator
+from skyfall.utils.utils_templates import TemplateGeneratorHelper
 from ui import PATH_MODEL_EXPORT
 from ui.widgets import ImageWidget, ImageGridLayout
-from utils.utils_camera import CameraHelper
-from utils.utils_templates import TemplateGeneratorHelper
+from skyfall.utils.utils_camera import CameraHelper
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 screen_detection_ui = uic.loadUiType(dir_path + '/screen_detection.ui')[0]

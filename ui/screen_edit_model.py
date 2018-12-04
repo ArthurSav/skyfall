@@ -6,13 +6,13 @@ import queue as Queue
 from PyQt5 import QtWidgets, uic, QtCore
 from PyQt5.QtWidgets import QMainWindow, QFileDialog, QDialog
 
-from engine.contours import ContourType
-from engine.model_manager import ModelCreator, DataLoader
+from skyfall.engine.contours import ContourType
+from skyfall.engine.model_manager import ModelCreator, DataLoader
 from ui import PATH_MODEL_EXPORT
 from ui.widgets import ImageWidget, ImageGridLayout
 
 # load ui file
-from utils.utils_camera import CameraHelper
+from skyfall.utils.utils_camera import CameraHelper
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 screen_edit_model_ui = uic.loadUiType(dir_path + '/screen_edit_model.ui')[0]

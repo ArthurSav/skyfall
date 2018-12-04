@@ -7,9 +7,8 @@ import tensorflow as tf
 from keras import utils
 from keras.layers import Conv2D, Dense, Flatten, MaxPooling2D
 from keras.models import Sequential, load_model
-import matplotlib.pylab as plt
 
-from utils import utils_image, utils_train
+from skyfall.utils import utils_image, utils_train
 
 
 def list_images(path, extensions=['.png', '.jpg', '.jpeg']):

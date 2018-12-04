@@ -6,7 +6,7 @@ import time
 import cv2
 from PyQt5.QtGui import QImage
 
-from engine.contours import ContourFinder, ContourType
+from skyfall.engine.contours import ContourFinder, ContourType
 
 
 class CameraManager:
