@@ -7,6 +7,7 @@ import tensorflow as tf
 from keras import utils
 from keras.layers import Conv2D, Dense, Flatten, MaxPooling2D
 from keras.models import Sequential, load_model
+import matplotlib.pylab as plt
 
 from utils import utils_image, utils_train
 
@@ -48,10 +49,12 @@ def create_folder_if_needed(path, name, verbose=False):
 
 class DataLoader:
 
+    __invert_images = True
+
     def __init__(self):
         pass
 
-    def load_training_data(self, path, split_ratio=0.2, size=64, normalize=True, invert=True, verbose=True,
+    def load_training_data(self, path, split_ratio=0.2, size=64, normalize=True, verbose=True,
                            max_images_per_class=None):
         """
         Loads folders from a source directory.
@@ -103,8 +106,8 @@ class DataLoader:
         number_of_classes = len(names)
 
         # load images into numpy array
-        x_train = self.__load_paths_as_array(train_paths, size, invert=invert)
-        x_test = self.__load_paths_as_array(test_paths, size, invert=invert)
+        x_train = self.__load_paths_as_array(train_paths, size, invert=self.__invert_images)
+        x_test = self.__load_paths_as_array(test_paths, size, invert=self.__invert_images)
 
         # shuffle images to even out distribution during training
         x_train, y_train = self.__shuffle(x_train, y_train)
@@ -122,12 +125,12 @@ class DataLoader:
 
         return names, (x_train, y_train), (x_test, y_test)
 
-    def load_evaluation_data(self, path=None, images=None, invert=True, size=64, normalize=True):
+    def load_evaluation_data(self, path=None, images=None, size=64, normalize=True):
         if path is not None:
             images, num = list_images(path)
-            images = self.__load_paths_as_array(images, size, invert=invert)
+            images = self.__load_paths_as_array(images, size, invert=self.__invert_images)
         elif images is not None and isinstance(images, (list,)):
-            images = self.__load_list_as_array(images, size, invert=invert)
+            images = self.__load_list_as_array(images, size, invert=self.__invert_images)
         else:
             raise ValueError('You must provide either a path or images to load')
 
