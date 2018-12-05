@@ -47,8 +47,8 @@ def create_folder_if_needed(path, name, verbose=False):
 
 
 class DataLoader:
-
     __invert_images = True
+    __retain_aspect_ratio = False
 
     def __init__(self):
         pass
@@ -105,8 +105,10 @@ class DataLoader:
         number_of_classes = len(names)
 
         # load images into numpy array
-        x_train = self.__load_paths_as_array(train_paths, size, invert=self.__invert_images)
-        x_test = self.__load_paths_as_array(test_paths, size, invert=self.__invert_images)
+        x_train = self.__load_paths_as_array(train_paths, size, invert=self.__invert_images,
+                                             retain_aspect_ratio=self.__retain_aspect_ratio)
+        x_test = self.__load_paths_as_array(test_paths, size, invert=self.__invert_images,
+                                            retain_aspect_ratio=self.__retain_aspect_ratio)
 
         # shuffle images to even out distribution during training
         x_train, y_train = self.__shuffle(x_train, y_train)
@@ -117,7 +119,8 @@ class DataLoader:
         x_test = x_test.reshape(x_test.shape[0], size, size, 1).astype('float32')
 
         if normalize:
-            x_train, y_train, x_test, y_test = self.__normalize_batch(x_train, y_train, x_test, y_test, number_of_classes)
+            x_train, y_train, x_test, y_test = self.__normalize_batch(x_train, y_train, x_test, y_test,
+                                                                      number_of_classes)
 
         print("Exported size: {}x{}".format(size, size))
         print("x_train: {}, x_test: {}".format(len(x_train), len(x_test)))
@@ -127,9 +130,11 @@ class DataLoader:
     def load_evaluation_data(self, path=None, images=None, size=64, normalize=True):
         if path is not None:
             images, num = list_images(path)
-            images = self.__load_paths_as_array(images, size, invert=self.__invert_images)
+            images = self.__load_paths_as_array(images, size, invert=self.__invert_images,
+                                                retain_aspect_ratio=self.__retain_aspect_ratio)
         elif images is not None and isinstance(images, (list,)):
-            images = self.__load_list_as_array(images, size, invert=self.__invert_images)
+            images = self.__load_list_as_array(images, size, invert=self.__invert_images,
+                                               retain_aspect_ratio=self.__retain_aspect_ratio)
         else:
             raise ValueError('You must provide either a path or images to load')
 
@@ -144,7 +149,7 @@ class DataLoader:
         return images
 
     @staticmethod
-    def __load_paths_as_array(paths, size, grayscale=True, invert=True):
+    def __load_paths_as_array(paths, size, grayscale=True, invert=True, retain_aspect_ratio=False):
         """
         :param paths: list of image paths to load
         :param size: image size (i.e 64x64)
@@ -161,14 +166,14 @@ class DataLoader:
                 continue
             if grayscale:
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            image = utils_image.convert_to_square(image, size)
             if invert:
                 image = np.invert(image)
+            image = utils_image.convert_to_square(image, size, retain_aspect_ratio)
             converted = np.concatenate((converted, image.reshape(1, size, size)))
         return converted
 
     @staticmethod
-    def __load_list_as_array(images, size, grayscale=True, invert=True):
+    def __load_list_as_array(images, size, grayscale=True, invert=True, retain_aspect_ratio=False):
         """
         :param images: images to convert
         :param size: image size (i.e 64x64)
@@ -181,9 +186,9 @@ class DataLoader:
         for image in images:
             if len(image.shape) == 3 and grayscale:
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            image = utils_image.convert_to_square(image, size)
             if invert:
                 image = np.invert(image)
+            image = utils_image.convert_to_square(image, size, retain_aspect_ratio)
             converted = np.concatenate((converted, image.reshape(1, size, size)))
         return converted
 
@@ -202,6 +207,10 @@ class DataLoader:
         # normalize images [0, 1]
         x_train = (x_train - np.min(x_train)) / np.ptp(x_train)
         x_test = (x_test - np.min(x_test)) / np.ptp(x_test)
+
+        # limit decimal point numbers
+        x_train = np.round(x_train, 1)
+        x_test = np.round(x_test, 1)
 
         # normalize labels to binary class matrix
         y_train = utils.to_categorical(y_train, number_of_classes)
@@ -246,11 +255,14 @@ class DataLoader:
         if images.dtype != 'float32':
             images = images.astype('float32')
         images = (images - np.min(images)) / np.ptp(images)
+
+        # limit decimal point numbers
+        images = np.round(images, 1)
+
         return images
 
 
 class ModelPredict:
-
     model = None
     names = None
 
@@ -600,7 +612,3 @@ class ModelCreator:
 
         self.model_name = name
         self.model_path = renamed_model_dir
-
-
-
-
