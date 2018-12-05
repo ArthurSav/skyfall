@@ -50,16 +50,28 @@ def convert_to_square(image, size, retain_aspect_ratio=False):
         mask[y_pos: y_pos + height, x_pos: x_pos + width] = image[0: height, 0: width]
 
         # downscale if needed
+        # note: pyramid_reduce is normalizing the image by default
         if differ / size > 1:
-            mask = pyramid_reduce(mask, differ / size)
-
+            mask = pyramid_reduce(mask,  differ/size)
+            mask = np.round(mask, 1)
     else:
         mask = image
 
     return cv2.resize(mask, (size, size), interpolation=cv2.INTER_AREA)
 
 
-def plot_image_list(images=None, columns=10, size=None, display=DisplaySize.SMALL):
+def plot_image(image):
+    plt.grid('off')
+    plt.xticks([])
+    plt.yticks([])
+    if len(image.shape) == 2:
+        plt.imshow(image, cmap='gray')
+    else:
+        plt.imshow(image)
+    plt.show()
+
+
+def plot_image_list(images=None, columns=10, size=None, display=DisplaySize.SMALL, convert_to_list=False):
     """
     Displays all images in a list
     
@@ -68,6 +80,13 @@ def plot_image_list(images=None, columns=10, size=None, display=DisplaySize.SMAL
     size: limit number of images to show
     folder: load images from folder
     """
+
+    # convert numpy to list first
+    if convert_to_list:
+        lst = []
+        for c in images:
+            lst.append(c.squeeze())
+        images = lst
 
     if images is None or len(images) == 0:
         print("Nothing to show")
