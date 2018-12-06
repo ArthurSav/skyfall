@@ -8,6 +8,8 @@ from keras import utils
 from keras.layers import Conv2D, Dense, Flatten, MaxPooling2D
 from keras.models import Sequential, load_model
 
+from skyfall.engine import IMAGE_SIZE_EXPORT
+
 from skyfall.utils import utils_image, utils_train
 
 
@@ -549,6 +551,9 @@ class ModelCreator:
         for idx, image in enumerate(images):
             image_name = "{}_{}{}".format(name, idx + current_images_size, self.save_extension)
             image_path = os.path.join(path, image_name)
+
+            # resize
+            image = cv2.resize(image, (IMAGE_SIZE_EXPORT, IMAGE_SIZE_EXPORT), interpolation=cv2.INTER_AREA)
 
             cv2.imwrite(image_path, image)
             added += 1
