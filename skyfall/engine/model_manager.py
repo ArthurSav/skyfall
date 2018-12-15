@@ -1,6 +1,7 @@
 import os
 import shutil
 
+import Augmentor
 import cv2
 import numpy as np
 import tensorflow as tf
@@ -8,7 +9,7 @@ from keras import utils
 from keras.layers import Conv2D, Dense, Flatten, MaxPooling2D
 from keras.models import Sequential, load_model
 
-from skyfall.engine import IMAGE_SIZE_EXPORT
+from skyfall.engine import IMAGE_SIZE_EXPORT, AUGMENTED_FOLDER_OUPUT
 
 from skyfall.utils import utils_image, utils_train
 
@@ -24,9 +25,10 @@ def list_images(path, extensions=['.png', '.jpg', '.jpeg']):
     return images, size
 
 
-def list_folders_with_images(path):
+def list_folders_with_images(path, list_augmented=False):
     """
     :param path: root path where folders are located
+    :param list_augmented: if true, it will list augmented images(if any)
     :return: list of folder names and images located in each folder [{'folder_name', [image1.png, image2.png]}...]
     """
 
@@ -34,7 +36,17 @@ def list_folders_with_images(path):
     for folder in os.listdir(path):
         folder_path = os.path.join(path, folder)
         if os.path.isdir(folder_path) and not folder.startswith("."):
-            images, size = list_images(folder_path)
+            images = []
+            normal_images, normal_size = list_images(folder_path)
+            images.extend(normal_images)
+
+            if list_augmented:
+                path_augmented = os.path.join(folder_path, AUGMENTED_FOLDER_OUPUT)
+                if os.path.isdir(path_augmented):
+                    aug_images, aug_size = list_images(path_augmented)
+                    if aug_size > 0:
+                        images.extend(aug_images)
+
             folders.append({"name": folder, "images": images})
     return folders
 
@@ -67,7 +79,7 @@ class DataLoader:
         return class names, training data with labels, testing data with labels
         """
 
-        classes = list_folders_with_images(path)
+        classes = list_folders_with_images(path, True)
 
         # class names (should be unique)
         names = []

@@ -1,5 +1,5 @@
-from enum import Enum
 import os
+from enum import Enum
 
 import cv2
 
@@ -8,6 +8,29 @@ class ContourType(Enum):
     NONE = 0
     MOBILE = 1  # Asssumes we're processing a mobile screen
     TRAINING = 2  # Assumes we're dealing with training images
+
+
+def apply_filters(image):
+    """
+    Image filters that mkae contour detection easier
+    :param image:
+    :return:
+    """
+
+    # convert to grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = cv2.bilateralFilter(gray, 11, 17, 17)
+
+    mask = cv2.Canny(gray, 50, 100)
+    mask = cv2.GaussianBlur(mask, (13, 13), 0)
+    # mask = cv2.Canny(mask, 50, 100)
+
+    # apply closing function
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+
+    return mask
 
 
 class ContourFinder:
@@ -59,7 +82,8 @@ class ContourFinder:
         return contours, hierarchy
 
         Note: Expects ONLY one screen as parent. Will not work if more that one parent is present
-        for contours and hierarchy see here: https://docs.opencv.org/3.4.0/d9/d8b/tutorial_py_contours_hierarchy.html
+        for contours and hierarchy
+        see here: https://docs.opencv.org/3.4.0/d9/d8b/tutorial_py_contours_hierarchy.html
         """
 
         contours, hierarchy = self.__find(cv2.RETR_TREE)
@@ -162,19 +186,10 @@ class ContourFinder:
         :return contours, hierarchy
         """
 
-        image = self.image
-
-        # convert to grayscale
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        gray = cv2.bilateralFilter(gray, 11, 17, 17)
-        edged = cv2.Canny(gray, 10, 250)
-
-        # apply closing function
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
-        closed = cv2.morphologyEx(edged, cv2.MORPH_CLOSE, kernel)
+        filtered = self.apply_filters(self.image)
 
         # find contours
-        img_contour, contours, hierarchy = cv2.findContours(closed.copy(), hierarchy_type, cv2.CHAIN_APPROX_SIMPLE)
+        img_contour, contours, hierarchy = cv2.findContours(filtered, hierarchy_type, cv2.CHAIN_APPROX_SIMPLE)
 
         return contours, hierarchy
 
